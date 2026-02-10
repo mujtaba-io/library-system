@@ -24,7 +24,9 @@
             </div>
             <nav>
                 <ul>
-                    <li class="active"><a href="#"><i class="fa-solid fa-layer-group"></i> Catalog</a></li>
+                    <li id="menu-catalog" class="active"><a href="#"><i class="fa-solid fa-layer-group"></i> Catalog</a>
+                    </li>
+                    <li id="menu-issued"><a href="#"><i class="fa-solid fa-file-invoice"></i> Issued Books</a></li>
                     <li><a href="#"><i class="fa-solid fa-chart-pie"></i> Analytics</a></li>
                     <li><a href="#"><i class="fa-solid fa-users"></i> Members</a></li>
                     <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li>
@@ -56,19 +58,41 @@
                 </div>
             </div>
 
-            <div class="table-container">
+            <div class="table-container" id="catalog-view">
                 <table id="booksTable">
                     <thead>
                         <tr>
+                        <tr>
+                            <th>Accession No</th>
                             <th>Title</th>
                             <th>Author</th>
-                            <th>ISBN</th>
-                            <th>Category</th>
+                            <th>Class</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTableBody">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container" id="issued-view" style="display: none;">
+                <h2>Issued Books Records</h2>
+                <table id="issuedTable">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Student ID</th>
+                            <th>Book Title</th>
+                            <th>Issue Date</th>
+                            <th>Return Date</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="booksTableBody">
+                    <tbody id="issuedTableBody">
                         <!-- Rows injected via JS -->
                     </tbody>
                 </table>
@@ -91,6 +115,10 @@
             <h2>Add New Book</h2>
             <form id="addBookForm">
                 <div class="form-group">
+                    <label>Accession No</label>
+                    <input type="text" name="accessionNo" required>
+                </div>
+                <div class="form-group">
                     <label>Title</label>
                     <input type="text" name="title" required>
                 </div>
@@ -99,18 +127,32 @@
                     <input type="text" name="author" required>
                 </div>
                 <div class="form-group">
-                    <label>ISBN</label>
-                    <input type="text" name="isbn" required>
+                    <label>Publisher</label>
+                    <input type="text" name="publisher">
                 </div>
                 <div class="form-group">
-                    <label>Category</label>
-                    <select name="category">
-                        <option value="Fiction">Fiction</option>
-                        <option value="Non-Fiction">Non-Fiction</option>
-                        <option value="Science">Science</option>
-                        <option value="History">History</option>
-                        <option value="Technology">Technology</option>
+                    <label>Year</label>
+                    <input type="number" name="year">
+                </div>
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" name="subject">
+                </div>
+                <div class="form-group">
+                    <label>Class</label>
+                    <select name="class">
+                        <option value="FA">FA</option>
+                        <option value="FSc">FSc</option>
+                        <option value="BS">BS</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" name="quantity" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Shelf No</label>
+                    <input type="text" name="shelfNo">
                 </div>
                 <div class="form-group">
                     <label>Status</label>
@@ -124,6 +166,35 @@
                     <textarea name="description" rows="3"></textarea>
                 </div>
                 <button type="submit" class="btn-primary">Save Book</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Issuing Book -->
+    <div id="issueBookModal" class="modal">
+        <div class="modal-content">
+            <span class="close-issue">&times;</span>
+            <h2>Issue Book</h2>
+            <form id="issueBookForm">
+                <input type="hidden" name="bookId" id="issueBookId">
+                <input type="hidden" name="bookTitle" id="issueBookTitle">
+                <div class="form-group">
+                    <label>Book</label>
+                    <input type="text" id="issueBookTitleDisplay" readonly disabled>
+                </div>
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <input type="text" name="studentName" required>
+                </div>
+                <div class="form-group">
+                    <label>Student ID</label>
+                    <input type="text" name="studentId" required>
+                </div>
+                <div class="form-group">
+                    <label>Return Date</label>
+                    <input type="date" name="returnDate" required>
+                </div>
+                <button type="submit" class="btn-primary">Issue Book</button>
             </form>
         </div>
     </div>

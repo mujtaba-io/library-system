@@ -34,12 +34,32 @@ function renderViewMode() {
 
         <div class="book-meta">
             <div class="meta-item">
-                <label>ISBN</label>
-                <span>${currentBook.isbn}</span>
+                <label>Accession No</label>
+                <span>${currentBook.accessionNo}</span>
             </div>
             <div class="meta-item">
-                <label>Category</label>
-                <span>${currentBook.category}</span>
+                <label>Publisher</label>
+                <span>${currentBook.publisher || '-'}</span>
+            </div>
+            <div class="meta-item">
+                <label>Year</label>
+                <span>${currentBook.year || '-'}</span>
+            </div>
+            <div class="meta-item">
+                <label>Subject</label>
+                <span>${currentBook.subject || '-'}</span>
+            </div>
+            <div class="meta-item">
+                <label>Class</label>
+                <span>${currentBook.class || '-'}</span>
+            </div>
+            <div class="meta-item">
+                <label>Quantity</label>
+                <span>${currentBook.quantity || '0'}</span>
+            </div>
+            <div class="meta-item">
+                <label>Shelf No</label>
+                <span>${currentBook.shelfNo || '-'}</span>
             </div>
             <div class="meta-item" style="grid-column: 1/-1;">
                 <label>Description</label>
@@ -68,18 +88,36 @@ function renderEditMode() {
 
         <div class="book-meta">
             <div class="meta-item">
-                <label>ISBN</label>
-                <input type="text" id="editIsbn" class="edit-input" value="${currentBook.isbn}">
+                <label>Accession No</label>
+                <input type="text" id="editAccessionNo" class="edit-input" value="${currentBook.accessionNo}">
             </div>
             <div class="meta-item">
-                <label>Category</label>
-                <select id="editCategory" class="edit-input">
-                    <option value="Fiction" ${currentBook.category === 'Fiction' ? 'selected' : ''}>Fiction</option>
-                    <option value="Non-Fiction" ${currentBook.category === 'Non-Fiction' ? 'selected' : ''}>Non-Fiction</option>
-                    <option value="Science" ${currentBook.category === 'Science' ? 'selected' : ''}>Science</option>
-                    <option value="History" ${currentBook.category === 'History' ? 'selected' : ''}>History</option>
-                    <option value="Technology" ${currentBook.category === 'Technology' ? 'selected' : ''}>Technology</option>
+                <label>Publisher</label>
+                <input type="text" id="editPublisher" class="edit-input" value="${currentBook.publisher || ''}">
+            </div>
+            <div class="meta-item">
+                <label>Year</label>
+                <input type="text" id="editYear" class="edit-input" value="${currentBook.year || ''}">
+            </div>
+            <div class="meta-item">
+                <label>Subject</label>
+                <input type="text" id="editSubject" class="edit-input" value="${currentBook.subject || ''}">
+            </div>
+            <div class="meta-item">
+                <label>Class</label>
+                <select id="editClass" class="edit-input">
+                    <option value="FA" ${currentBook.class === 'FA' ? 'selected' : ''}>FA</option>
+                    <option value="FSc" ${currentBook.class === 'FSc' ? 'selected' : ''}>FSc</option>
+                    <option value="BS" ${currentBook.class === 'BS' ? 'selected' : ''}>BS</option>
                 </select>
+            </div>
+            <div class="meta-item">
+                <label>Quantity</label>
+                <input type="number" id="editQuantity" class="edit-input" value="${currentBook.quantity || '1'}">
+            </div>
+            <div class="meta-item">
+                <label>Shelf No</label>
+                <input type="text" id="editShelfNo" class="edit-input" value="${currentBook.shelfNo || ''}">
             </div>
             <div class="meta-item">
                 <label>Status</label>
@@ -109,8 +147,13 @@ window.saveChanges = async () => {
     const updates = {
         title: document.getElementById('editTitle').value,
         author: document.getElementById('editAuthor').value,
-        isbn: document.getElementById('editIsbn').value,
-        category: document.getElementById('editCategory').value,
+        accessionNo: document.getElementById('editAccessionNo').value,
+        publisher: document.getElementById('editPublisher').value,
+        year: document.getElementById('editYear').value,
+        subject: document.getElementById('editSubject').value,
+        class: document.getElementById('editClass').value,
+        quantity: document.getElementById('editQuantity').value,
+        shelfNo: document.getElementById('editShelfNo').value,
         status: document.getElementById('editStatus').value,
         description: document.getElementById('editDescription').value
     };

@@ -56,3 +56,15 @@ ipcMain.handle('delete-book', (event, id) => {
     db.deleteBook(id);
     return { success: true };
 });
+
+ipcMain.handle('issue-book', (event, issuance) => {
+    return db.issueBook(issuance);
+});
+
+ipcMain.handle('get-issued-books', (event) => {
+    return db.getIssuedBooks();
+});
+
+ipcMain.handle('return-book', (event, issuanceId) => {
+    return db.returnBook(issuanceId);
+});

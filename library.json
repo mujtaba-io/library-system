@@ -5,7 +5,7 @@
       "author": "Bushra",
       "isbn": "1234567890",
       "category": "Non-Fiction",
-      "status": "Available",
+      "status": "Checked Out",
       "description": "",
       "id": "1770728406801"
     },
@@ -36,5 +36,40 @@
       "description": "",
       "id": "1770728932456"
     }
-  ]
+  ],
+  "issuance": [
+    {
+      "bookId": "1770728406801",
+      "bookTitle": "College Book",
+      "studentName": "44345",
+      "studentId": "345345",
+      "returnDate": "5343-12-23",
+      "id": "1770734079232",
+      "status": "Returned",
+      "issueDate": "2026-02-10",
+      "returnDateActual": "2026-02-10"
+    },
+    {
+      "bookId": "1770728406801",
+      "bookTitle": "College Book",
+      "memberId": "5234",
+      "dueDate": "0323-02-22",
+      "id": "1770735327836",
+      "status": "Issued",
+      "issueDate": "2026-02-10",
+      "fine": 0
+    },
+    {
+      "bookId": "1770728406801",
+      "bookTitle": "College Book",
+      "studentName": null,
+      "studentId": null,
+      "returnDate": null,
+      "id": "1770735327837",
+      "status": "Issued",
+      "issueDate": "2026-02-10",
+      "fine": 0
+    }
+  ],
+  "members": []
 }

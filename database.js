@@ -7,7 +7,7 @@ const adapter = new FileSync(path.join(__dirname, 'library.json'));
 const db = low(adapter);
 
 // Set defaults if library.json doesn't exist
-db.defaults({ books: [] }).write();
+db.defaults({ books: [], issuance: [] }).write();
 
 module.exports = {
   // Get books with pagination and filtering
@@ -22,7 +22,7 @@ module.exports = {
       chain = chain.filter(book =>
         book.title.toLowerCase().includes(q) ||
         book.author.toLowerCase().includes(q) ||
-        book.isbn.includes(q)
+        (book.accessionNo && book.accessionNo.toString().includes(q))
       );
     }
 
@@ -78,5 +78,55 @@ module.exports = {
   // Delete a book
   deleteBook: (id) => {
     db.get('books').remove({ id }).write();
+  },
+
+  // Issue a book
+  issueBook: (issuance) => {
+    const newIssuance = {
+      ...issuance,
+      id: Date.now().toString(),
+      status: 'Issued',
+      issueDate: new Date().toISOString().split('T')[0] // Store current date (YYYY-MM-DD)
+    };
+
+    // Add issuance record
+    db.get('issuance').push(newIssuance).write();
+
+    // Update book status
+    db.get('books')
+      .find({ id: issuance.bookId })
+      .assign({ status: 'Checked Out' })
+      .write();
+
+    return newIssuance;
+  },
+
+  // Get current issued books
+  getIssuedBooks: () => {
+    return db.get('issuance')
+      .filter({ status: 'Issued' })
+      .value();
+  },
+
+  // Return a book
+  returnBook: (issuanceId) => {
+    // Find issuance record
+    const record = db.get('issuance').find({ id: issuanceId }).value();
+
+    if (!record) return null;
+
+    // Update issuance status
+    db.get('issuance')
+      .find({ id: issuanceId })
+      .assign({ status: 'Returned', returnDateActual: new Date().toISOString().split('T')[0] })
+      .write();
+
+    // Update book status to Available
+    db.get('books')
+      .find({ id: record.bookId })
+      .assign({ status: 'Available' })
+      .write();
+
+    return { success: true };
   }
 };

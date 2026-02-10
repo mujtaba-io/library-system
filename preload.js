@@ -5,5 +5,8 @@ contextBridge.exposeInMainWorld('api', {
     getBookById: (id) => ipcRenderer.invoke('get-book-by-id', id),
     addBook: (book) => ipcRenderer.invoke('add-book', book),
     updateBook: (id, updates) => ipcRenderer.invoke('update-book', id, updates),
-    deleteBook: (id) => ipcRenderer.invoke('delete-book', id)
+    deleteBook: (id) => ipcRenderer.invoke('delete-book', id),
+    issueBook: (issuance) => ipcRenderer.invoke('issue-book', issuance),
+    getIssuedBooks: () => ipcRenderer.invoke('get-issued-books'),
+    returnBook: (issuanceId) => ipcRenderer.invoke('return-book', issuanceId)
 });
