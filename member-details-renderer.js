@@ -132,7 +132,6 @@ window.saveChanges = async () => {
     try {
         const updatedMember = await window.api.updateMember(memberInternalId, updates);
         currentMember = updatedMember;
-        alert('Member updated successfully!');
         renderViewMode();
     } catch (error) {
         console.error(error);
