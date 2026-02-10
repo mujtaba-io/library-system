@@ -1,12 +1,12 @@
 :root {
-    --bg-color: #0f172a;
-    --sidebar-bg: #1e293b;
-    --card-bg: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
+    --bg-color: #f1f5f9;
+    --sidebar-bg: #ffffff;
+    --card-bg: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
     --accent: #3b82f6;
     --accent-hover: #2563eb;
-    --border: #334155;
+    --border: #e2e8f0;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
@@ -206,7 +206,7 @@ td {
 }
 
 th {
-    background-color: #1a2436;
+    background-color: #f8fafc;
     color: var(--text-secondary);
     font-weight: 600;
     position: sticky;
@@ -214,7 +214,7 @@ th {
 }
 
 tr:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: rgba(0, 0, 0, 0.02);
 }
 
 .status-badge {
@@ -304,7 +304,7 @@ tr:hover {
 }
 
 .close:hover {
-    color: white;
+    color: var(--danger);
 }
 
 .form-group {
@@ -330,7 +330,7 @@ textarea {
     background-color: var(--bg-color);
     border: 1px solid var(--border);
     border-radius: 6px;
-    color: white;
+    color: var(--text-primary);
     /* Hard-code interaction properties */
     pointer-events: auto !important;
     user-select: text !important;
