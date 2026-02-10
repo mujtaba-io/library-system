@@ -7,14 +7,21 @@
       "category": "Non-Fiction",
       "status": "Checked Out",
       "description": "",
-      "id": "1770728406801"
+      "id": "1770728406801",
+      "accessionNo": "undefined",
+      "publisher": "",
+      "year": "342",
+      "subject": "",
+      "class": "FA",
+      "quantity": "1",
+      "shelfNo": ""
     },
     {
       "title": "fgsfg",
       "author": "fgfg",
       "isbn": "fgfg",
       "category": "Fiction",
-      "status": "Checked Out",
+      "status": "Available",
       "description": "gfg",
       "id": "1770728441378"
     },
@@ -39,7 +46,7 @@
       "author": "qwqwq",
       "isbn": "wqwqwqw",
       "category": "Fiction",
-      "status": "Available",
+      "status": "Checked Out",
       "description": "",
       "id": "1770728932456"
     }
@@ -62,9 +69,10 @@
       "memberId": "5234",
       "dueDate": "0323-02-22",
       "id": "1770735327836",
-      "status": "Issued",
+      "status": "Returned",
       "issueDate": "2026-02-10",
-      "fine": 0
+      "fine": 0,
+      "returnDateActual": "2026-02-10"
     },
     {
       "bookId": "1770728406801",
@@ -73,9 +81,10 @@
       "studentId": null,
       "returnDate": null,
       "id": "1770735327837",
-      "status": "Issued",
+      "status": "Returned",
       "issueDate": "2026-02-10",
-      "fine": 0
+      "fine": 0,
+      "returnDateActual": "2026-02-10"
     },
     {
       "bookId": "1770728441378",
@@ -84,8 +93,9 @@
       "studentId": null,
       "returnDate": null,
       "id": "1770736565053",
-      "status": "Issued",
-      "issueDate": "2026-02-10"
+      "status": "Returned",
+      "issueDate": "2026-02-10",
+      "returnDateActual": "2026-02-10"
     },
     {
       "bookId": "1770728922689",
@@ -97,18 +107,91 @@
       "dueDate": "213123-02-13",
       "fine": "0",
       "id": "1770737486422",
+      "status": "Returned",
+      "returnDateActual": "2026-02-10"
+    },
+    {
+      "bookId": "1770728406801",
+      "bookTitle": "College Book",
+      "accessionNo": "undefined",
+      "memberId": "1770737486421",
+      "memberName": "SOLARRRR",
+      "issueDate": "2026-02-10",
+      "dueDate": "0011-11-11",
+      "fine": "0",
+      "id": "1770745158066",
+      "status": "Returned",
+      "returnDateActual": "2026-02-10"
+    },
+    {
+      "bookId": "1770728406801",
+      "bookTitle": "College Book",
+      "accessionNo": "undefined",
+      "memberId": "1770737486421",
+      "memberName": "SOLARRRR",
+      "issueDate": "2026-02-10",
+      "dueDate": "0121-12-12",
+      "fine": "0",
+      "id": "1770745540697",
+      "status": "Returned",
+      "returnDateActual": "2026-02-10"
+    },
+    {
+      "bookId": "1770728441378",
+      "bookTitle": "fgsfg",
+      "accessionNo": "",
+      "memberId": "1770737486421",
+      "memberName": "SOLARRRR",
+      "issueDate": "2026-02-10",
+      "dueDate": "0012-12-12",
+      "fine": "0",
+      "id": "1770745794921",
+      "status": "Returned",
+      "returnDateActual": "2026-02-10"
+    },
+    {
+      "bookId": "1770728406801",
+      "bookTitle": "College Book",
+      "accessionNo": "undefined",
+      "memberId": "1770737486421",
+      "memberName": "SOLARRRR",
+      "issueDate": "2026-02-10",
+      "dueDate": "0012-02-12",
+      "fine": "0",
+      "id": "1770746108028",
+      "status": "Issued"
+    },
+    {
+      "bookId": "1770728932456",
+      "bookTitle": "qwqwqwqw",
+      "accessionNo": "",
+      "memberId": "1770746126130",
+      "memberName": "qwqw",
+      "issueDate": "2026-02-10",
+      "dueDate": "0012-12-12",
+      "fine": "0",
+      "id": "1770746126132",
       "status": "Issued"
     }
   ],
   "members": [
     {
-      "memberId": "qwqq",
-      "name": "qwqw",
-      "type": "Student",
+      "memberId": "SOLARRR",
+      "name": "SOLARRRR",
+      "type": "Teacher",
       "class": "qwqw",
       "rollNo": "qwqw",
       "contact": "qwqw",
       "id": "1770737486421"
+    },
+    {
+      "memberId": "suuu",
+      "name": "qwqw",
+      "type": "Student",
+      "class": "qwq",
+      "rollNo": "qwqw",
+      "contact": "qwqw",
+      "id": "1770746126130"
     }
   ]
 }

@@ -105,9 +105,21 @@ module.exports = {
 
   // Get current issued books
   getIssuedBooks: () => {
-    return db.get('issuance')
-      .filter({ status: 'Issued' })
-      .value();
+    const issuances = db.get('issuance').filter({ status: 'Issued' }).value();
+    const members = db.get('members').value();
+
+    return issuances.map(issuance => {
+      const member = members.find(m => m.id === issuance.memberId);
+      if (member) {
+        return {
+          ...issuance,
+          memberName: member.name,
+          memberDisplayId: member.memberId, // Store display ID for UI
+          contact: member.contact // Optional: current contact info
+        };
+      }
+      return issuance; // Return original if member deleted/not found
+    });
   },
 
   // Return a book
@@ -156,5 +168,18 @@ module.exports = {
   // Get member by Internal ID (or Member ID field)
   getMemberById: (id) => {
     return db.get('members').find({ id }).value();
+  },
+
+  // Update a member
+  updateMember: (id, updates) => {
+    db.get('members').find({ id }).assign(updates).write();
+    return db.get('members').find({ id }).value();
+  },
+
+  // Delete a member
+  deleteMember: (id) => {
+    db.get('members').remove({ id }).write();
+    // Also remove from member id mappings if needed, but for now simple remove is enough.
+    return true;
   }
 };

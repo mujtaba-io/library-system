@@ -153,7 +153,7 @@ async function loadIssuedBooks() {
             <td><strong style="color: white;">${record.bookTitle}</strong></td>
             <td>${record.accessionNo || '-'}</td>
             <td>${record.memberName || record.studentName || '-'}</td>
-            <td>${record.memberId || record.studentId || '-'}</td>
+            <td>${record.memberDisplayId || record.memberId || '-'}</td>
             <td>${record.issueDate}</td>
             <td>${record.dueDate || record.returnDate}</td>
             <td>${record.fine || 0}</td>
@@ -181,6 +181,7 @@ async function loadMembers() {
 
     members.forEach(member => {
         const row = document.createElement('tr');
+
         row.innerHTML = `
             <td>${member.memberId}</td>
             <td><strong style="color: white;">${member.name}</strong></td>
@@ -188,6 +189,11 @@ async function loadMembers() {
             <td>${member.class || '-'}</td>
             <td>${member.rollNo || '-'}</td>
             <td>${member.contact || '-'}</td>
+            <td>
+                <button class="action-btn" onclick="window.location.href='member-details.html?id=${member.id}'" title="View Details">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </td>
         `;
         membersTableBody.appendChild(row);
     });
@@ -207,6 +213,15 @@ window.openIssueModal = (id, title, accessionNo) => {
     if (memberSelectMode) {
         memberSelectMode.value = 'existing';
         toggleMemberMode();
+    }
+
+    // Clear previous search results and input
+    if (memberSearchInput) {
+        memberSearchInput.value = '';
+        memberSearchResults.style.display = 'none';
+        memberSearchResults.innerHTML = '';
+        // Pre-populate with initial list
+        performMemberSearch('');
     }
 
     issueBookModal.style.display = "block";
@@ -241,37 +256,77 @@ function toggleMemberMode() {
 
 // Member Search
 let memberDebounce;
+// Define performMemberSearch in outer scope/globally if needed, or attach to window
+let performMemberSearch = async () => { };
+
 if (memberSearchInput) {
-    memberSearchInput.addEventListener('input', (e) => {
-        clearTimeout(memberDebounce);
-        const query = e.target.value;
-        if (query.length < 2) {
-            memberSearchResults.style.display = 'none';
-            return;
-        }
-        memberDebounce = setTimeout(async () => {
+    // Unified function to perform search
+    performMemberSearch = async (query = '') => {
+        try {
+            console.log(`[Renderer] Performing member search with query: "${query}"`);
             const members = await window.api.getMembers(query);
+            console.log(`[Renderer] Member search results:`, members);
+
             memberSearchResults.innerHTML = '';
             if (members.length > 0) {
                 memberSearchResults.style.display = 'block';
+                // Default option
+                const defaultOption = document.createElement('option');
+                defaultOption.text = "Select a member...";
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                memberSearchResults.add(defaultOption);
+
                 members.forEach(m => {
                     const option = document.createElement('option');
-                    option.value = m.memberId;
+                    option.value = m.id; // Use INTERNAL ID
                     option.text = `${m.name} (${m.memberId})`;
                     option.dataset.name = m.name;
                     memberSearchResults.add(option);
                 });
+                // Auto-size the dropdown, max 10 items
+                memberSearchResults.size = Math.min(members.length + 1, 10);
             } else {
+                console.log('[Renderer] No members found.');
                 memberSearchResults.style.display = 'none';
             }
+        } catch (error) {
+            console.error('[Renderer] Error searching members:', error);
+            alert('Error searching members. Check console.');
+        }
+    };
+
+    memberSearchInput.addEventListener('input', (e) => {
+        clearTimeout(memberDebounce);
+        const query = e.target.value;
+        memberDebounce = setTimeout(() => {
+            performMemberSearch(query);
         }, 300);
+    });
+
+    // Show results immediately on focus
+    memberSearchInput.addEventListener('focus', () => {
+        if (memberSearchResults.options.length === 0 || memberSearchInput.value === '') {
+            performMemberSearch(memberSearchInput.value);
+        } else {
+            memberSearchResults.style.display = 'block';
+        }
+    });
+
+    // Hide results when clicking outside (optional, but good UX)
+    document.addEventListener('click', (e) => {
+        if (!memberSearchInput.contains(e.target) && !memberSearchResults.contains(e.target)) {
+            memberSearchResults.style.display = 'none';
+        }
     });
 
     memberSearchResults.addEventListener('change', () => {
         const selectedOption = memberSearchResults.options[memberSearchResults.selectedIndex];
+        if (selectedOption.disabled) return;
+
         document.getElementById('selectedMemberId').value = selectedOption.value;
         document.getElementById('selectedMemberName').value = selectedOption.dataset.name;
-        memberSearchInput.value = selectedOption.text;
+        memberSearchInput.value = selectedOption.text; // Update input with selected name
         memberSearchResults.style.display = 'none';
     });
 }
@@ -365,6 +420,7 @@ addBookForm.addEventListener('submit', async (e) => {
 });
 
 // Form Submit - Add Member
+// Form Submit - Add Member
 if (addMemberForm) {
     addMemberForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -403,7 +459,7 @@ issueBookForm.addEventListener('submit', async (e) => {
             contact: formData.get('newContact'),
         };
         const newMem = await window.api.addMember(member);
-        memberId = newMem.memberId;
+        memberId = newMem.id; // Use INTERNAL ID
         memberName = newMem.name;
     } else {
         memberId = formData.get('selectedMemberId');
@@ -430,3 +486,5 @@ issueBookForm.addEventListener('submit', async (e) => {
     issueBookForm.reset();
     loadBooks();
 });
+
+

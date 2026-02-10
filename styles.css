@@ -273,6 +273,8 @@ tr:hover {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
+    pointer-events: auto;
+    /* Ensure clicks are captured */
 }
 
 .modal-content {
@@ -287,6 +289,10 @@ tr:hover {
     /* Enable scrolling if content is too long */
     border-radius: 16px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    /* Create stacking context */
+    z-index: 101;
+    /* Above modal background if needed */
 }
 
 .close {
@@ -314,13 +320,30 @@ tr:hover {
 
 .form-group input,
 .form-group select,
-.form-group textarea {
+.form-group textarea,
+input,
+select,
+textarea {
+    /* APPLIED GLOBALLY */
     width: 100%;
     padding: 10px;
     background-color: var(--bg-color);
     border: 1px solid var(--border);
     border-radius: 6px;
     color: white;
+    /* Hard-code interaction properties */
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
+    z-index: 105 !important;
+    /* Ensure above modal content */
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: 2px solid var(--accent);
+    border-color: transparent;
 }
 
 .form-group textarea {

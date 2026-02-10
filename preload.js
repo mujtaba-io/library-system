@@ -11,5 +11,7 @@ contextBridge.exposeInMainWorld('api', {
     returnBook: (issuanceId) => ipcRenderer.invoke('return-book', issuanceId),
     addMember: (member) => ipcRenderer.invoke('add-member', member),
     getMembers: (search) => ipcRenderer.invoke('get-members', search),
-    getMemberById: (id) => ipcRenderer.invoke('get-member-by-id', id)
+    getMemberById: (id) => ipcRenderer.invoke('get-member-by-id', id),
+    updateMember: (id, updates) => ipcRenderer.invoke('update-member', id, updates),
+    deleteMember: (id) => ipcRenderer.invoke('delete-member', id)
 });

@@ -115,6 +115,7 @@
                             <th>Class/Dept</th>
                             <th>Roll No</th>
                             <th>Contact</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="membersTableBody">
@@ -212,19 +213,20 @@
 
                 <!-- Member Selection Mode -->
                 <div class="form-group">
-                    <label>Member Selection</label>
+                    <label>Selection Mode</label>
                     <select id="memberSelectMode">
-                        <option value="existing">Select Existing Member</option>
+                        <option value="existing">Search Existing Database</option>
                         <option value="new">Add New Member</option>
                     </select>
                 </div>
 
                 <!-- Existing Member Search -->
                 <div id="existingMemberGroup" class="form-group">
-                    <label>Search Member (Name or ID)</label>
-                    <input type="text" id="memberSearchInput" placeholder="Type to search...">
-                    <select id="memberSearchResults" size="3"
-                        style="display:none; width: 100%; margin-top: 5px;"></select>
+                    <label>Search Member (Type Name or ID)</label>
+                    <input type="text" id="memberSearchInput" placeholder="Click here to see members..."
+                        onclick="this.focus()" onfocus="this.select()">
+                    <select id="memberSearchResults" size="5"
+                        style="display:none; width: 100%; margin-top: 5px; position: relative; z-index: 200; border: 1px solid var(--accent);"></select>
                     <input type="hidden" name="selectedMemberId" id="selectedMemberId">
                     <input type="hidden" name="selectedMemberName" id="selectedMemberName">
                 </div>

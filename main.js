@@ -81,3 +81,11 @@ ipcMain.handle('get-members', (event, search) => {
 ipcMain.handle('get-member-by-id', (event, id) => {
     return db.getMemberById(id);
 });
+
+ipcMain.handle('update-member', (event, id, updates) => {
+    return db.updateMember(id, updates);
+});
+
+ipcMain.handle('delete-member', (event, id) => {
+    return db.deleteMember(id);
+});
