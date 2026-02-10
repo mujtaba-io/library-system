@@ -27,8 +27,8 @@
                     <li id="menu-catalog" class="active"><a href="#"><i class="fa-solid fa-layer-group"></i> Catalog</a>
                     </li>
                     <li id="menu-issued"><a href="#"><i class="fa-solid fa-file-invoice"></i> Issued Books</a></li>
+                    <li id="menu-members"><a href="#"><i class="fa-solid fa-users"></i> Members</a></li>
                     <li><a href="#"><i class="fa-solid fa-chart-pie"></i> Analytics</a></li>
-                    <li><a href="#"><i class="fa-solid fa-users"></i> Members</a></li>
                     <li><a href="#"><i class="fa-solid fa-gear"></i> Settings</a></li>
                 </ul>
             </nav>
@@ -62,14 +62,12 @@
                 <table id="booksTable">
                     <thead>
                         <tr>
-                        <tr>
                             <th>Accession No</th>
                             <th>Title</th>
                             <th>Author</th>
                             <th>Class</th>
                             <th>Status</th>
                             <th>Actions</th>
-                        </tr>
                         </tr>
                     </thead>
                     <tbody id="booksTableBody">
@@ -83,16 +81,43 @@
                 <table id="issuedTable">
                     <thead>
                         <tr>
-                            <th>Student Name</th>
-                            <th>Student ID</th>
                             <th>Book Title</th>
+                            <th>Accession No</th>
+                            <th>Member Name</th>
+                            <th>Member ID</th>
                             <th>Issue Date</th>
                             <th>Return Date</th>
+                            <th>Fine</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="issuedTableBody">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container" id="members-view" style="display: none;">
+                <div class="controls-bar" style="margin-bottom: 20px;">
+                    <div class="actions">
+                        <button id="addMemberBtn" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Add New
+                            Member</button>
+                    </div>
+                </div>
+                <h2>Library Members</h2>
+                <table id="membersTable">
+                    <thead>
+                        <tr>
+                            <th>Member ID</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Class/Dept</th>
+                            <th>Roll No</th>
+                            <th>Contact</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membersTableBody">
                         <!-- Rows injected via JS -->
                     </tbody>
                 </table>
@@ -178,23 +203,117 @@
             <form id="issueBookForm">
                 <input type="hidden" name="bookId" id="issueBookId">
                 <input type="hidden" name="bookTitle" id="issueBookTitle">
+                <input type="hidden" name="accessionNo" id="issueBookAccession">
+
                 <div class="form-group">
                     <label>Book</label>
                     <input type="text" id="issueBookTitleDisplay" readonly disabled>
                 </div>
+
+                <!-- Member Selection Mode -->
                 <div class="form-group">
-                    <label>Student Name</label>
-                    <input type="text" name="studentName" required>
+                    <label>Member Selection</label>
+                    <select id="memberSelectMode">
+                        <option value="existing">Select Existing Member</option>
+                        <option value="new">Add New Member</option>
+                    </select>
+                </div>
+
+                <!-- Existing Member Search -->
+                <div id="existingMemberGroup" class="form-group">
+                    <label>Search Member (Name or ID)</label>
+                    <input type="text" id="memberSearchInput" placeholder="Type to search...">
+                    <select id="memberSearchResults" size="3"
+                        style="display:none; width: 100%; margin-top: 5px;"></select>
+                    <input type="hidden" name="selectedMemberId" id="selectedMemberId">
+                    <input type="hidden" name="selectedMemberName" id="selectedMemberName">
+                </div>
+
+                <!-- New Member Fields -->
+                <div id="newMemberGroup"
+                    style="display:none; border: 1px solid var(--border); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                    <h3 style="margin-top: 0;">New Member Details</h3>
+                    <div class="form-group">
+                        <label>Member ID</label>
+                        <input type="text" name="newMemberId">
+                    </div>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" name="newName">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="newType">
+                            <option value="Student">Student</option>
+                            <option value="Teacher">Teacher</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Class/Dept</label>
+                        <input type="text" name="newClass">
+                    </div>
+                    <div class="form-group">
+                        <label>Roll No</label>
+                        <input type="text" name="newRollNo">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact No</label>
+                        <input type="text" name="newContact">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Issue Date</label>
+                    <input type="date" name="issueDate" id="issueDate" readonly>
                 </div>
                 <div class="form-group">
-                    <label>Student ID</label>
-                    <input type="text" name="studentId" required>
+                    <label>Due Date</label>
+                    <input type="date" name="dueDate" required>
                 </div>
                 <div class="form-group">
-                    <label>Return Date</label>
-                    <input type="date" name="returnDate" required>
+                    <label>Fine (start)</label>
+                    <input type="number" name="fine" value="0">
                 </div>
+
                 <button type="submit" class="btn-primary">Issue Book</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Member (Standalone) -->
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close-member">&times;</span>
+            <h2>Add New Member</h2>
+            <form id="addMemberForm">
+                <div class="form-group">
+                    <label>Member ID</label>
+                    <input type="text" name="memberId" required>
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select name="type">
+                        <option value="Student">Student</option>
+                        <option value="Teacher">Teacher</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Class/Dept</label>
+                    <input type="text" name="class">
+                </div>
+                <div class="form-group">
+                    <label>Roll No</label>
+                    <input type="text" name="rollNo">
+                </div>
+                <div class="form-group">
+                    <label>Contact No</label>
+                    <input type="text" name="contact">
+                </div>
+                <button type="submit" class="btn-primary">Add Member</button>
             </form>
         </div>
     </div>

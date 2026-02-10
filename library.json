@@ -14,7 +14,7 @@
       "author": "fgfg",
       "isbn": "fgfg",
       "category": "Fiction",
-      "status": "Available",
+      "status": "Checked Out",
       "description": "gfg",
       "id": "1770728441378"
     },
@@ -25,7 +25,14 @@
       "category": "Technology",
       "status": "Available",
       "description": "",
-      "id": "1770728922689"
+      "id": "1770728922689",
+      "accessionNo": "undefined",
+      "publisher": "",
+      "year": "",
+      "subject": "",
+      "class": "FA",
+      "quantity": "1",
+      "shelfNo": ""
     },
     {
       "title": "qwqwqwqw",
@@ -69,7 +76,39 @@
       "status": "Issued",
       "issueDate": "2026-02-10",
       "fine": 0
+    },
+    {
+      "bookId": "1770728441378",
+      "bookTitle": "fgsfg",
+      "studentName": null,
+      "studentId": null,
+      "returnDate": null,
+      "id": "1770736565053",
+      "status": "Issued",
+      "issueDate": "2026-02-10"
+    },
+    {
+      "bookId": "1770728922689",
+      "bookTitle": "dfsdf",
+      "accessionNo": "",
+      "memberId": "qwqq",
+      "memberName": "qwqw",
+      "issueDate": "2026-02-10",
+      "dueDate": "213123-02-13",
+      "fine": "0",
+      "id": "1770737486422",
+      "status": "Issued"
     }
   ],
-  "members": []
+  "members": [
+    {
+      "memberId": "qwqq",
+      "name": "qwqw",
+      "type": "Student",
+      "class": "qwqw",
+      "rollNo": "qwqw",
+      "contact": "qwqw",
+      "id": "1770737486421"
+    }
+  ]
 }

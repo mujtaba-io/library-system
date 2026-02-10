@@ -68,3 +68,16 @@ ipcMain.handle('get-issued-books', (event) => {
 ipcMain.handle('return-book', (event, issuanceId) => {
     return db.returnBook(issuanceId);
 });
+
+// Member Handlers
+ipcMain.handle('add-member', (event, member) => {
+    return db.addMember(member);
+});
+
+ipcMain.handle('get-members', (event, search) => {
+    return db.getMembers(search);
+});
+
+ipcMain.handle('get-member-by-id', (event, id) => {
+    return db.getMemberById(id);
+});

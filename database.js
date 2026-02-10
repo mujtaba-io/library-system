@@ -6,8 +6,10 @@ const path = require('path');
 const adapter = new FileSync(path.join(__dirname, 'library.json'));
 const db = low(adapter);
 
+// Assuming no uuid for now, sticking to Date.now() + math random for simplicity as per previous code style.
+
 // Set defaults if library.json doesn't exist
-db.defaults({ books: [], issuance: [] }).write();
+db.defaults({ books: [], issuance: [], members: [] }).write();
 
 module.exports = {
   // Get books with pagination and filtering
@@ -128,5 +130,31 @@ module.exports = {
       .write();
 
     return { success: true };
+  },
+
+  // Add a new member
+  addMember: (member) => {
+    const newMember = { ...member, id: Date.now().toString() };
+    db.get('members').push(newMember).write();
+    return newMember;
+  },
+
+  // Get members with search
+  getMembers: (search = '') => {
+    let chain = db.get('members');
+    if (search) {
+      const q = search.toLowerCase();
+      chain = chain.filter(member =>
+        member.name.toLowerCase().includes(q) ||
+        member.memberId.toLowerCase().includes(q) ||
+        member.contactNo.includes(q)
+      );
+    }
+    return chain.value();
+  },
+
+  // Get member by Internal ID (or Member ID field)
+  getMemberById: (id) => {
+    return db.get('members').find({ id }).value();
   }
 };

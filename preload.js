@@ -8,5 +8,8 @@ contextBridge.exposeInMainWorld('api', {
     deleteBook: (id) => ipcRenderer.invoke('delete-book', id),
     issueBook: (issuance) => ipcRenderer.invoke('issue-book', issuance),
     getIssuedBooks: () => ipcRenderer.invoke('get-issued-books'),
-    returnBook: (issuanceId) => ipcRenderer.invoke('return-book', issuanceId)
+    returnBook: (issuanceId) => ipcRenderer.invoke('return-book', issuanceId),
+    addMember: (member) => ipcRenderer.invoke('add-member', member),
+    getMembers: (search) => ipcRenderer.invoke('get-members', search),
+    getMemberById: (id) => ipcRenderer.invoke('get-member-by-id', id)
 });
