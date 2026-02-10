@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .details-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            color: var(--accent);
+        }
+
+        .book-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 2rem;
+        }
+
+        .book-title-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .book-meta {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .meta-item label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .meta-item span {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        .btn-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--border);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* Edit Mode Styles */
+        .edit-input {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <main class="main-content">
+            <a href="index.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Catalogue</a>
+
+            <div class="details-container" id="detailsContainer">
+                <!-- Content injected via JS -->
+                <div id="loading">Loading...</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="details-renderer.js"></script>
+</body>
+
+</html>
