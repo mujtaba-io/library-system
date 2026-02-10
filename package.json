@@ -4,7 +4,9 @@
   "description": "A local Library Management System for front desk kiosks.",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir"
   },
   "keywords": [
     "library",
@@ -14,9 +16,22 @@
   "author": "Antigravity",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^28.0.0"
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
   },
   "dependencies": {
     "lowdb": "^1.0.0"
+  },
+  "build": {
+    "appId": "com.library.lms",
+    "productName": "Library Management System",
+    "win": {
+      "target": "portable",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

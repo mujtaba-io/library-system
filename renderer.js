@@ -122,7 +122,7 @@ async function loadBooks() {
 
         row.innerHTML = `
             <td>${book.accessionNo || '-'}</td>
-            <td><strong style="color: white;">${book.title}</strong></td>
+            <td><strong>${book.title}</strong></td>
             <td>${book.author}</td>
             <td>${book.class || '-'}</td>
             <td><span class="status-badge ${statusClass}">${book.status}</span></td>
@@ -150,7 +150,7 @@ async function loadIssuedBooks() {
         const statusClass = record.status === 'Issued' ? 'status-checked' : 'status-available';
 
         row.innerHTML = `
-            <td><strong style="color: white;">${record.bookTitle}</strong></td>
+            <td><strong>${record.bookTitle}</strong></td>
             <td>${record.accessionNo || '-'}</td>
             <td>${record.memberName || record.studentName || '-'}</td>
             <td>${record.memberDisplayId || record.memberId || '-'}</td>
@@ -184,7 +184,7 @@ async function loadMembers() {
 
         row.innerHTML = `
             <td>${member.memberId}</td>
-            <td><strong style="color: white;">${member.name}</strong></td>
+            <td><strong>${member.name}</strong></td>
             <td>${member.type}</td>
             <td>${member.class || '-'}</td>
             <td>${member.rollNo || '-'}</td>

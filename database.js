@@ -1,9 +1,15 @@
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
+const { app } = require('electron');
 const path = require('path');
 
 // Initialize database
-const adapter = new FileSync(path.join(__dirname, 'library.json'));
+// If packaged (exe), store data next to the executable. Otherwise, storage in project root.
+const dbPath = app.isPackaged
+  ? path.join(path.dirname(process.execPath), 'library.json')
+  : path.join(__dirname, 'library.json');
+
+const adapter = new FileSync(dbPath);
 const db = low(adapter);
 
 // Assuming no uuid for now, sticking to Date.now() + math random for simplicity as per previous code style.
