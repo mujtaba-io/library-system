@@ -1,20 +1,14 @@
 {
   "books": [
     {
-      "title": "A Text book of Biotechnology",
+      "title": "A Text book of Biotehcnology",
       "author": "R.C Dubey",
       "category": "Botany",
       "accessionNo": "1",
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 1,
-      "year": "",
-      "subject": "Biotechnology",
-      "class": "FA",
-      "quantity": "1",
-      "shelfNo": "",
-      "description": ""
+      "id": 1
     },
     {
       "title": "A Text book of Botany V-I 12th Ed",
@@ -24,13 +18,7 @@
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 2,
-      "year": "",
-      "subject": "botany",
-      "class": "FA",
-      "quantity": "1",
-      "shelfNo": "",
-      "description": ""
+      "id": 2
     },
     {
       "title": "A Text book of Botany V-I 12th Ed",
@@ -60,13 +48,7 @@
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 5,
-      "year": "1212",
-      "subject": "",
-      "class": "FA",
-      "quantity": "1",
-      "shelfNo": "",
-      "description": ""
+      "id": 5
     },
     {
       "title": "A Text book of Botany V-II 13th Ed",
@@ -5197,6 +5179,16 @@
       "status": "Available",
       "dateAdded": "2026-02-11",
       "id": 518
+    },
+    {
+      "title": "Project in Chemistry",
+      "author": "R.H Stone",
+      "category": "Chemistry",
+      "accessionNo": "5098",
+      "publisher": "NA",
+      "status": "Available",
+      "dateAdded": "2026-02-11",
+      "id": 519
     },
     {
       "title": "Dictionary of chemistry",
@@ -25387,152 +25379,8 @@
       "status": "Available",
       "dateAdded": "2026-02-11",
       "id": 2538
-    },
-    {
-      "title": "1",
-      "author": "1",
-      "accessionNo": "1",
-      "publisher": "1",
-      "year": "1",
-      "subject": "1",
-      "class": "FSc",
-      "quantity": "1",
-      "shelfNo": "11",
-      "status": "Available",
-      "description": "111",
-      "id": "1770828637438"
-    },
-    {
-      "title": "a",
-      "author": "a",
-      "accessionNo": "a",
-      "isbn": "a",
-      "publisher": "a",
-      "year": "23",
-      "subject": "a",
-      "class": "FA",
-      "quantity": "1",
-      "shelfNo": "234",
-      "status": "Available",
-      "description": "324",
-      "id": "1770830934392"
     }
   ],
-  "issuance": [
-    {
-      "bookId": "2",
-      "bookTitle": "A Text book of Botany V-I 12th Ed",
-      "accessionNo": "2",
-      "memberId": "1770823561203",
-      "memberName": "a",
-      "issueDate": "2026-02-11",
-      "dueDate": "1111-11-11",
-      "fine": "0",
-      "id": "1770823561220",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "2",
-      "bookTitle": "A Text book of Botany V-I 12th Ed",
-      "accessionNo": "2",
-      "memberId": "1770823561203",
-      "memberName": "a",
-      "issueDate": "2026-02-11",
-      "dueDate": "0011-11-11",
-      "fine": "0",
-      "id": "1770823887159",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "1",
-      "bookTitle": "A Text book of Biotehcnology",
-      "accessionNo": "1",
-      "memberId": "1770823561203",
-      "memberName": "a",
-      "issueDate": "2026-02-11",
-      "dueDate": "0111-11-11",
-      "fine": "0",
-      "id": "1770823912987",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "3",
-      "bookTitle": "A Text book of Botany V-I 12th Ed",
-      "accessionNo": "3",
-      "memberId": "1770824017668",
-      "memberName": "1234",
-      "issueDate": "2026-02-11",
-      "dueDate": "0121-12-12",
-      "fine": "0",
-      "id": "1770824030003",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "1",
-      "bookTitle": "A Text book of Biotechnology",
-      "accessionNo": "1",
-      "memberId": "1770823561203",
-      "memberName": "Asma",
-      "issueDate": "2026-02-11",
-      "dueDate": "0011-11-11",
-      "fine": "0",
-      "id": "1770827403332",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "1",
-      "bookTitle": "A Text book of Biotechnology",
-      "accessionNo": "1",
-      "memberId": "1770823561203",
-      "memberName": "Asma",
-      "issueDate": "2026-02-11",
-      "dueDate": "0011-11-17",
-      "fine": "0",
-      "id": "1770828553868",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "5",
-      "bookTitle": "A Text book of Botany V-II 13th Ed",
-      "accessionNo": "5",
-      "memberId": "1770823561203",
-      "memberName": "Asma",
-      "issueDate": "2026-02-11",
-      "dueDate": "2026-02-26",
-      "fine": "0",
-      "id": "1770828561854",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    },
-    {
-      "bookId": "3",
-      "bookTitle": "A Text book of Botany V-I 12th Ed",
-      "accessionNo": "3",
-      "memberId": "1770828609470",
-      "memberName": "A",
-      "issueDate": "2026-02-11",
-      "dueDate": "2026-02-22",
-      "fine": "0",
-      "id": "1770828609477",
-      "status": "Returned",
-      "returnDateActual": "2026-02-11"
-    }
-  ],
-  "members": [
-    {
-      "memberId": "A",
-      "name": "A",
-      "type": "Teacher",
-      "class": "A",
-      "rollNo": "A",
-      "contact": "A",
-      "id": "1770828609470"
-    }
-  ]
+  "issuance": [],
+  "members": []
 }
