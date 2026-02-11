@@ -30,7 +30,8 @@ module.exports = {
       chain = chain.filter(book =>
         book.title.toLowerCase().includes(q) ||
         book.author.toLowerCase().includes(q) ||
-        (book.accessionNo && book.accessionNo.toString().includes(q))
+        (book.accessionNo && book.accessionNo.toString().includes(q)) ||
+        (book.isbn && book.isbn.toString().includes(q))
       );
     }
 

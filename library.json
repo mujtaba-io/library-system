@@ -38,7 +38,7 @@
       "category": "Botany",
       "accessionNo": "3",
       "publisher": "NA",
-      "status": "Checked Out",
+      "status": "Available",
       "dateAdded": "2026-02-11",
       "id": 3
     },
@@ -25401,6 +25401,21 @@
       "status": "Available",
       "description": "111",
       "id": "1770828637438"
+    },
+    {
+      "title": "a",
+      "author": "a",
+      "accessionNo": "a",
+      "isbn": "a",
+      "publisher": "a",
+      "year": "23",
+      "subject": "a",
+      "class": "FA",
+      "quantity": "1",
+      "shelfNo": "234",
+      "status": "Available",
+      "description": "324",
+      "id": "1770830934392"
     }
   ],
   "issuance": [
@@ -25505,7 +25520,8 @@
       "dueDate": "2026-02-22",
       "fine": "0",
       "id": "1770828609477",
-      "status": "Issued"
+      "status": "Returned",
+      "returnDateActual": "2026-02-11"
     }
   ],
   "members": [

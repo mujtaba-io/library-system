@@ -38,6 +38,10 @@ function renderViewMode() {
                 <span>${currentBook.accessionNo}</span>
             </div>
             <div class="meta-item">
+                <label>ISBN</label>
+                <span>${currentBook.isbn || '-'}</span>
+            </div>
+            <div class="meta-item">
                 <label>Publisher</label>
                 <span>${currentBook.publisher || '-'}</span>
             </div>
@@ -90,6 +94,10 @@ function renderEditMode() {
             <div class="meta-item">
                 <label>Accession No</label>
                 <input type="text" id="editAccessionNo" class="edit-input" value="${currentBook.accessionNo}">
+            </div>
+            <div class="meta-item">
+                <label>ISBN</label>
+                <input type="text" id="editIsbn" class="edit-input" value="${currentBook.isbn || ''}">
             </div>
             <div class="meta-item">
                 <label>Publisher</label>
@@ -148,6 +156,7 @@ window.saveChanges = async () => {
         title: document.getElementById('editTitle').value,
         author: document.getElementById('editAuthor').value,
         accessionNo: document.getElementById('editAccessionNo').value,
+        isbn: document.getElementById('editIsbn').value,
         publisher: document.getElementById('editPublisher').value,
         year: document.getElementById('editYear').value,
         subject: document.getElementById('editSubject').value,

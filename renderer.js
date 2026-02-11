@@ -403,6 +403,7 @@ addBookForm.addEventListener('submit', async (e) => {
         title: formData.get('title'),
         author: formData.get('author'),
         accessionNo: formData.get('accessionNo'),
+        isbn: formData.get('isbn'),
         publisher: formData.get('publisher'),
         year: formData.get('year'),
         subject: formData.get('subject'),
