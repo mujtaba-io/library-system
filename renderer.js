@@ -107,7 +107,7 @@ async function loadBooks() {
 
         let actionButtons = `
             <button class="action-btn" onclick="window.location.href='details.html?id=${book.id}'" title="View Details">
-                <i class="fa-solid fa-eye"></i>
+                <i class="fa-solid fa-eye"></i> View
             </button>
         `;
 
@@ -115,7 +115,7 @@ async function loadBooks() {
         if (book.status === 'Available') {
             actionButtons += `
                 <button class="action-btn" onclick="openIssueModal('${book.id}', '${book.title.replace(/'/g, "\\'")}', '${book.accessionNo || ''}')" title="Issue Book">
-                    <i class="fa-solid fa-hand-holding-hand"></i>
+                    <i class="fa-solid fa-hand-holding-hand"></i> Issue
                 </button>
             `;
         }
@@ -191,7 +191,7 @@ async function loadMembers() {
             <td>${member.contact || '-'}</td>
             <td>
                 <button class="action-btn" onclick="window.location.href='member-details.html?id=${member.id}'" title="View Details">
-                    <i class="fa-solid fa-eye"></i>
+                    <i class="fa-solid fa-eye"></i> View
                 </button>
             </td>
         `;
