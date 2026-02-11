@@ -2,14 +2,17 @@
     --bg-color: #f1f5f9;
     --sidebar-bg: #ffffff;
     --card-bg: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --accent: #3b82f6;
-    --accent-hover: #2563eb;
-    --border: #e2e8f0;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --text-primary: #0f172a;
+    /* Darker 900 */
+    --text-secondary: #475569;
+    /* Darker 600 */
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --border: #cbd5e1;
+    /* Darker 300 */
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
 }
 
 * {
@@ -191,6 +194,29 @@ header {
     cursor: not-allowed;
 }
 
+/* Back Button Standardized */
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 2rem;
+    cursor: pointer;
+    background-color: white;
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.back-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background-color: #f8fafc;
+}
+
 /* Table View */
 .table-container {
     flex: 1;
@@ -221,7 +247,8 @@ th {
 }
 
 tr:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(0, 0, 0, 0.05);
+    /* Increased contrast */
 }
 
 .status-badge {

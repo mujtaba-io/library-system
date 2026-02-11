@@ -1,12 +1,12 @@
 {
   "books": [
     {
-      "title": "A Text book of Biotehcnology",
+      "title": "A Text book of Biotechnology",
       "author": "R.C Dubey",
       "category": "Botany",
       "accessionNo": "1",
       "publisher": "NA",
-      "status": "Checked Out",
+      "status": "Available",
       "dateAdded": "2026-02-11",
       "id": 1,
       "year": "",
@@ -25430,7 +25430,8 @@
       "dueDate": "0111-11-11",
       "fine": "0",
       "id": "1770823912987",
-      "status": "Issued"
+      "status": "Returned",
+      "returnDateActual": "2026-02-11"
     },
     {
       "bookId": "3",
@@ -25449,21 +25450,12 @@
   "members": [
     {
       "memberId": "ASMI",
-      "name": "a",
+      "name": "Asma",
       "type": "Teacher",
       "class": "a",
       "rollNo": "a",
       "contact": "a",
       "id": "1770823561203"
-    },
-    {
-      "memberId": "123",
-      "name": "1234",
-      "type": "Teacher",
-      "class": "123",
-      "rollNo": "213",
-      "contact": "12",
-      "id": "1770824017668"
     }
   ]
 }
