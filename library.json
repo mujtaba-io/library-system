@@ -6,15 +6,15 @@
       "category": "Botany",
       "accessionNo": "1",
       "publisher": "NA",
-      "status": "Available",
+      "status": "Checked Out",
       "dateAdded": "2026-02-11",
       "id": 1,
       "year": "",
-      "subject": "",
+      "subject": "Biotechnology",
       "class": "FA",
       "quantity": "1",
       "shelfNo": "",
-      "description": "A book of biotechnology."
+      "description": ""
     },
     {
       "title": "A Text book of Botany V-I 12th Ed",
@@ -24,7 +24,13 @@
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 2
+      "id": 2,
+      "year": "",
+      "subject": "botany",
+      "class": "FA",
+      "quantity": "1",
+      "shelfNo": "",
+      "description": ""
     },
     {
       "title": "A Text book of Botany V-I 12th Ed",
@@ -1214,13 +1220,7 @@
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 121,
-      "year": "",
-      "subject": "Software Engineering",
-      "class": "FA",
-      "quantity": "1",
-      "shelfNo": "",
-      "description": ""
+      "id": 121
     },
     {
       "title": "MODELING AND SIMULATION B5PC415",
@@ -25395,15 +25395,28 @@
   ],
   "issuance": [
     {
-      "bookId": "1",
-      "bookTitle": "A Text book of Biotehcnology",
-      "accessionNo": "1",
-      "memberId": "1770820279113",
-      "memberName": "Ali Ahmad",
+      "bookId": "2",
+      "bookTitle": "A Text book of Botany V-I 12th Ed",
+      "accessionNo": "2",
+      "memberId": "1770823561203",
+      "memberName": "a",
       "issueDate": "2026-02-11",
-      "dueDate": "1212-12-12",
+      "dueDate": "1111-11-11",
       "fine": "0",
-      "id": "1770820279122",
+      "id": "1770823561220",
+      "status": "Returned",
+      "returnDateActual": "2026-02-11"
+    },
+    {
+      "bookId": "2",
+      "bookTitle": "A Text book of Botany V-I 12th Ed",
+      "accessionNo": "2",
+      "memberId": "1770823561203",
+      "memberName": "a",
+      "issueDate": "2026-02-11",
+      "dueDate": "0011-11-11",
+      "fine": "0",
+      "id": "1770823887159",
       "status": "Returned",
       "returnDateActual": "2026-02-11"
     },
@@ -25411,25 +25424,46 @@
       "bookId": "1",
       "bookTitle": "A Text book of Biotehcnology",
       "accessionNo": "1",
-      "memberId": "1770820279113",
-      "memberName": "Ali Ahmad",
+      "memberId": "1770823561203",
+      "memberName": "a",
       "issueDate": "2026-02-11",
-      "dueDate": "1212-12-12",
+      "dueDate": "0111-11-11",
       "fine": "0",
-      "id": "1770820343015",
+      "id": "1770823912987",
+      "status": "Issued"
+    },
+    {
+      "bookId": "3",
+      "bookTitle": "A Text book of Botany V-I 12th Ed",
+      "accessionNo": "3",
+      "memberId": "1770824017668",
+      "memberName": "1234",
+      "issueDate": "2026-02-11",
+      "dueDate": "0121-12-12",
+      "fine": "0",
+      "id": "1770824030003",
       "status": "Returned",
       "returnDateActual": "2026-02-11"
     }
   ],
   "members": [
     {
-      "memberId": "012",
-      "name": "Ali Ahmad",
+      "memberId": "ASMI",
+      "name": "a",
       "type": "Teacher",
-      "class": "2",
-      "rollNo": "21",
-      "contact": "03365696623",
-      "id": "1770820279113"
+      "class": "a",
+      "rollNo": "a",
+      "contact": "a",
+      "id": "1770823561203"
+    },
+    {
+      "memberId": "123",
+      "name": "1234",
+      "type": "Teacher",
+      "class": "123",
+      "rollNo": "213",
+      "contact": "12",
+      "id": "1770824017668"
     }
   ]
 }

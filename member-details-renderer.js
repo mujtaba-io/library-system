@@ -125,7 +125,7 @@ window.saveChanges = async () => {
     };
 
     if (!updates.name || !updates.memberId) {
-        alert('Name and Member ID are required.');
+        await customAlert('Name and Member ID are required.');
         return;
     }
 
@@ -135,18 +135,18 @@ window.saveChanges = async () => {
         renderViewMode();
     } catch (error) {
         console.error(error);
-        alert('Failed to update member.');
+        await customAlert('Failed to update member.');
     }
 };
 
 window.deleteMember = async () => {
-    if (confirm('Are you sure you want to delete this member? This action cannot be undone.')) {
+    if (await customConfirm('Are you sure you want to delete this member? This action cannot be undone.')) {
         try {
             await window.api.deleteMember(memberInternalId);
             window.location.href = 'index.html';
         } catch (error) {
             console.error(error);
-            alert('Failed to delete member.');
+            await customAlert('Failed to delete member.');
         }
     }
 };

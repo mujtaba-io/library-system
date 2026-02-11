@@ -229,7 +229,7 @@ window.openIssueModal = (id, title, accessionNo) => {
 
 // Global function to return book
 window.returnBook = async (issuanceId) => {
-    if (confirm('Are you sure you want to return this book?')) {
+    if (await customConfirm('Are you sure you want to return this book?')) {
         await window.api.returnBook(issuanceId);
         loadIssuedBooks();
     }
@@ -292,7 +292,7 @@ if (memberSearchInput) {
             }
         } catch (error) {
             console.error('[Renderer] Error searching members:', error);
-            alert('Error searching members. Check console.');
+            await customAlert('Error searching members. Check console.');
         }
     };
 
@@ -465,7 +465,7 @@ issueBookForm.addEventListener('submit', async (e) => {
         memberId = formData.get('selectedMemberId');
         memberName = formData.get('selectedMemberName');
         if (!memberId) {
-            alert('Please select a member');
+            await customAlert('Please select a member');
             return;
         }
     }

@@ -164,7 +164,7 @@ window.saveChanges = async () => {
 };
 
 window.deleteBook = async () => {
-    if (confirm('Are you sure you want to delete this book? This cannot be undone.')) {
+    if (await customConfirm('Are you sure you want to delete this book? This cannot be undone.')) {
         await window.api.deleteBook(bookId);
         window.location.href = 'index.html';
     }
