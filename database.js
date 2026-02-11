@@ -65,7 +65,7 @@ module.exports = {
 
   // Get a single book by ID
   getBookById: (id) => {
-    return db.get('books').find({ id }).value();
+    return db.get('books').find(b => b.id == id).value();
   },
 
   // Add a new book
@@ -79,13 +79,13 @@ module.exports = {
 
   // Update a book
   updateBook: (id, updates) => {
-    db.get('books').find({ id }).assign(updates).write();
-    return db.get('books').find({ id }).value();
+    db.get('books').find(b => b.id == id).assign(updates).write();
+    return db.get('books').find(b => b.id == id).value();
   },
 
   // Delete a book
   deleteBook: (id) => {
-    db.get('books').remove({ id }).write();
+    db.get('books').remove(b => b.id == id).write();
   },
 
   // Issue a book
@@ -102,7 +102,7 @@ module.exports = {
 
     // Update book status
     db.get('books')
-      .find({ id: issuance.bookId })
+      .find(b => b.id == issuance.bookId)
       .assign({ status: 'Checked Out' })
       .write();
 
@@ -143,7 +143,7 @@ module.exports = {
 
     // Update book status to Available
     db.get('books')
-      .find({ id: record.bookId })
+      .find(b => b.id == record.bookId)
       .assign({ status: 'Available' })
       .write();
 

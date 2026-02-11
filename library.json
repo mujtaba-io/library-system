@@ -8,7 +8,13 @@
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 1
+      "id": 1,
+      "year": "",
+      "subject": "",
+      "class": "FA",
+      "quantity": "1",
+      "shelfNo": "",
+      "description": "A book of biotechnology."
     },
     {
       "title": "A Text book of Botany V-I 12th Ed",
@@ -1208,7 +1214,13 @@
       "publisher": "NA",
       "status": "Available",
       "dateAdded": "2026-02-11",
-      "id": 121
+      "id": 121,
+      "year": "",
+      "subject": "Software Engineering",
+      "class": "FA",
+      "quantity": "1",
+      "shelfNo": "",
+      "description": ""
     },
     {
       "title": "MODELING AND SIMULATION B5PC415",
@@ -25381,6 +25393,43 @@
       "id": 2538
     }
   ],
-  "issuance": [],
-  "members": []
+  "issuance": [
+    {
+      "bookId": "1",
+      "bookTitle": "A Text book of Biotehcnology",
+      "accessionNo": "1",
+      "memberId": "1770820279113",
+      "memberName": "Ali Ahmad",
+      "issueDate": "2026-02-11",
+      "dueDate": "1212-12-12",
+      "fine": "0",
+      "id": "1770820279122",
+      "status": "Returned",
+      "returnDateActual": "2026-02-11"
+    },
+    {
+      "bookId": "1",
+      "bookTitle": "A Text book of Biotehcnology",
+      "accessionNo": "1",
+      "memberId": "1770820279113",
+      "memberName": "Ali Ahmad",
+      "issueDate": "2026-02-11",
+      "dueDate": "1212-12-12",
+      "fine": "0",
+      "id": "1770820343015",
+      "status": "Returned",
+      "returnDateActual": "2026-02-11"
+    }
+  ],
+  "members": [
+    {
+      "memberId": "012",
+      "name": "Ali Ahmad",
+      "type": "Teacher",
+      "class": "2",
+      "rollNo": "21",
+      "contact": "03365696623",
+      "id": "1770820279113"
+    }
+  ]
 }

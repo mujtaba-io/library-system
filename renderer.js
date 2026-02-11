@@ -37,7 +37,7 @@ const memberSearchResults = document.getElementById('memberSearchResults');
 const issueDateInput = document.getElementById('issueDate');
 
 let currentPage = 1;
-const itemsPerPage = 8;
+const itemsPerPage = 12;
 let currentSearch = '';
 
 // Navigation Logic
