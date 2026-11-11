@@ -1,0 +1,11 @@
+{
+	"name": "library-system",
+	"description": "College Library Management System",
+	"authors": ["Library System"],
+	"license": "proprietary",
+	"targetType": "executable",
+	"targetName": "library-system",
+	"dependencies": {
+		"dlangui": "*"
+	}
+}
