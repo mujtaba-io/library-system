@@ -183,11 +183,11 @@ class LinearGridWidget : StringGridWidget {
         uint fg = 0x18181B;
         if (txt == "—"d) {
             fg = 0xA1A1AA;
-        } else if (txt == "Overdue"d || txt == "0 left"d || txt == "Core"d) {
+        } else if (txt == "Overdue"d || txt == "0 left"d || txt == "Core"d || txt == "Issued"d) {
             fg = 0xDC2626;
         } else if (txt == "Active"d || txt == "Teacher"d || txt == "Yes"d) {
             fg = 0x2563EB;
-        } else if (txt == "Returned"d || txt == "Student"d) {
+        } else if (txt == "Returned"d || txt == "Student"d || txt == "Available"d) {
             fg = 0x059669;
         }
 
@@ -207,7 +207,7 @@ class LibraryAppView : HorizontalLayout {
     FlatButton navSchemaBtn;
     TextWidget statBooksText;
     TextWidget statMembersText;
-    TextWidget statLoansText;
+    TextWidget statIssuesText;
     TextWidget statusBanner;
 
     // Content stack
@@ -229,16 +229,16 @@ class LibraryAppView : HorizontalLayout {
     ComboBox issueBookCombo;
     string[] issueBookIds;
     EditLine issueDueDateInput;
-    VerticalLayout issueLoanExtraBox;
-    EditLine[string] issueLoanExtraEditors;
+    VerticalLayout issueExtraBox;
+    EditLine[string] issueExtraEditors;
 
-    EditLine loanSearchInput;
-    string loanFilterMode = "active";
-    FlatButton loanFilterActiveBtn;
-    FlatButton loanFilterOverdueBtn;
-    FlatButton loanFilterAllBtn;
-    LinearGridWidget loansGrid;
-    string[] displayedLoanIds;
+    EditLine issueSearchInput;
+    string issueFilterMode = "active";
+    FlatButton issueFilterActiveBtn;
+    FlatButton issueFilterOverdueBtn;
+    FlatButton issueFilterAllBtn;
+    LinearGridWidget issuesGrid;
+    string[] displayedIssueIds;
 
     // --- 2. Books workspace widgets ---
     EditLine bookSearchInput;
@@ -268,7 +268,7 @@ class LibraryAppView : HorizontalLayout {
     EntityType currentSchemaEntity = EntityType.book;
     FlatButton schemaEntityBookBtn;
     FlatButton schemaEntityMemberBtn;
-    FlatButton schemaEntityLoanBtn;
+    FlatButton schemaEntityIssueBtn;
     LinearGridWidget schemaGrid;
     string selectedSchemaKey;
     EditLine schemaKeyInput;
@@ -402,11 +402,11 @@ class LibraryAppView : HorizontalLayout {
         statMembersText.textColor = 0xD4D4D8;
         statsCard.addChild(statMembersText);
 
-        statLoansText = new TextWidget(null, ""d);
-        statLoansText.fontSize = pointsToPixels(9);
-        statLoansText.textColor = 0x60A5FA;
-        statLoansText.fontWeight = 600;
-        statsCard.addChild(statLoansText);
+        statIssuesText = new TextWidget(null, ""d);
+        statIssuesText.fontSize = pointsToPixels(9);
+        statIssuesText.textColor = 0x60A5FA;
+        statIssuesText.fontWeight = 600;
+        statsCard.addChild(statIssuesText);
 
         sb.addChild(statsCard);
         return sb;
@@ -477,7 +477,7 @@ class LibraryAppView : HorizontalLayout {
 
         // Step 1: Member CNIC
         desk.addChild(makeFieldLabel("1. Member CNIC (no dashes)"d));
-        issueCnicInput = makeEditLine("3520244556677"d);
+        issueCnicInput = makeEditLine(""d);
         issueCnicInput.contentChange = delegate(EditableContent content) {
             onIssueCnicChanged();
         };
@@ -506,7 +506,7 @@ class LibraryAppView : HorizontalLayout {
         desk.addChild(onTheFlyMemberBox);
 
         // Step 2: Book selection
-        desk.addChild(makeFieldLabel("2. Filter Books (Title / ID / ISBN)"d));
+        desk.addChild(makeFieldLabel("2. Filter Books (Title / ID / Accession No)"d));
         issueBookFilterInput = makeEditLine(""d);
         issueBookFilterInput.contentChange = delegate(EditableContent content) {
             refreshIssueBookCombo();
@@ -541,11 +541,11 @@ class LibraryAppView : HorizontalLayout {
         issueDueDateInput = makeEditLine(toUTF32(datePlusDaysIso(14)));
         desk.addChild(issueDueDateInput);
 
-        // Dynamic loan schema fields
-        issueLoanExtraBox = new VerticalLayout();
-        issueLoanExtraBox.layoutWidth = FILL_PARENT;
-        issueLoanExtraBox.layoutHeight = WRAP_CONTENT;
-        desk.addChild(issueLoanExtraBox);
+        // Dynamic issue schema fields
+        issueExtraBox = new VerticalLayout();
+        issueExtraBox.layoutWidth = FILL_PARENT;
+        issueExtraBox.layoutHeight = WRAP_CONTENT;
+        desk.addChild(issueExtraBox);
 
         auto issueBtn = makePrimaryButton("Issue Book"d);
         issueBtn.layoutWidth = FILL_PARENT;
@@ -561,7 +561,7 @@ class LibraryAppView : HorizontalLayout {
         root.addChild(leftCol);
         root.addChild(makeDivider(true, 0xE4E4E7));
 
-        // Right: Active & Past Loans Table
+        // Right: Active & Past Issued Books Table
         auto rightPane = new VerticalLayout();
         rightPane.layoutWidth = FILL_PARENT;
         rightPane.layoutHeight = FILL_PARENT;
@@ -575,49 +575,49 @@ class LibraryAppView : HorizontalLayout {
         topBar.alignment = Align.VCenter;
         topBar.backgroundColor = 0xFFFFFF;
 
-        auto loansTitle = new TextWidget(null, "Loans"d);
-        loansTitle.fontSize = pointsToPixels(13);
-        loansTitle.fontWeight = 700;
-        loansTitle.textColor = 0x18181B;
-        loansTitle.margins = Rect(0, 0, 16, 0);
-        topBar.addChild(loansTitle);
+        auto issuesTitle = new TextWidget(null, "Issued Books"d);
+        issuesTitle.fontSize = pointsToPixels(13);
+        issuesTitle.fontWeight = 700;
+        issuesTitle.textColor = 0x18181B;
+        issuesTitle.margins = Rect(0, 0, 16, 0);
+        topBar.addChild(issuesTitle);
 
         topBar.addChild(makeInlineLabel("Search:"d));
-        loanSearchInput = makeEditLine(""d);
-        loanSearchInput.layoutWidth = FILL_PARENT;
-        loanSearchInput.margins = Rect(0, 0, 12, 0);
-        loanSearchInput.contentChange = delegate(EditableContent c) {
-            refreshLoansGrid();
+        issueSearchInput = makeEditLine(""d);
+        issueSearchInput.layoutWidth = FILL_PARENT;
+        issueSearchInput.margins = Rect(0, 0, 12, 0);
+        issueSearchInput.contentChange = delegate(EditableContent c) {
+            refreshIssuesGrid();
         };
-        topBar.addChild(loanSearchInput);
+        topBar.addChild(issueSearchInput);
 
-        loanFilterActiveBtn = makeFilterPill("Active"d, true);
-        loanFilterActiveBtn.click = delegate(Widget w) {
-            loanFilterMode = "active";
-            refreshLoansGrid();
+        issueFilterActiveBtn = makeFilterPill("Active"d, true);
+        issueFilterActiveBtn.click = delegate(Widget w) {
+            issueFilterMode = "active";
+            refreshIssuesGrid();
             return true;
         };
-        loanFilterOverdueBtn = makeFilterPill("Overdue"d, false);
-        loanFilterOverdueBtn.click = delegate(Widget w) {
-            loanFilterMode = "overdue";
-            refreshLoansGrid();
+        issueFilterOverdueBtn = makeFilterPill("Overdue"d, false);
+        issueFilterOverdueBtn.click = delegate(Widget w) {
+            issueFilterMode = "overdue";
+            refreshIssuesGrid();
             return true;
         };
-        loanFilterAllBtn = makeFilterPill("All"d, false);
-        loanFilterAllBtn.click = delegate(Widget w) {
-            loanFilterMode = "all";
-            refreshLoansGrid();
+        issueFilterAllBtn = makeFilterPill("All"d, false);
+        issueFilterAllBtn.click = delegate(Widget w) {
+            issueFilterMode = "all";
+            refreshIssuesGrid();
             return true;
         };
 
-        topBar.addChild(loanFilterActiveBtn);
-        topBar.addChild(loanFilterOverdueBtn);
-        topBar.addChild(loanFilterAllBtn);
+        topBar.addChild(issueFilterActiveBtn);
+        topBar.addChild(issueFilterOverdueBtn);
+        topBar.addChild(issueFilterAllBtn);
 
         auto returnBtn = makeSuccessButton("Return Selected Book"d);
         returnBtn.margins = Rect(10, 0, 0, 0);
         returnBtn.click = delegate(Widget w) {
-            handleReturnSelectedLoan();
+            handleReturnSelectedIssue();
             return true;
         };
         topBar.addChild(returnBtn);
@@ -625,13 +625,13 @@ class LibraryAppView : HorizontalLayout {
         rightPane.addChild(topBar);
         rightPane.addChild(makeDivider(false, 0xE4E4E7));
 
-        loansGrid = new LinearGridWidget("LOANS_GRID");
-        loansGrid.layoutWidth = FILL_PARENT;
-        loansGrid.layoutHeight = FILL_PARENT;
-        loansGrid.cellActivated = delegate(GridWidgetBase src, int col, int row) {
-            handleReturnSelectedLoan();
+        issuesGrid = new LinearGridWidget("ISSUES_GRID");
+        issuesGrid.layoutWidth = FILL_PARENT;
+        issuesGrid.layoutHeight = FILL_PARENT;
+        issuesGrid.cellActivated = delegate(GridWidgetBase src, int col, int row) {
+            handleReturnSelectedIssue();
         };
-        rightPane.addChild(loansGrid);
+        rightPane.addChild(issuesGrid);
 
         root.addChild(rightPane);
         return root;
@@ -653,7 +653,7 @@ class LibraryAppView : HorizontalLayout {
 
         auto m = store.findMemberByCnic(norm);
         if (m !is null) {
-            int activeCount = store.activeLoanCountForMember(norm);
+            int activeCount = store.activeIssueCountForMember(norm);
             string summary = "Matched: " ~ m.get("name") ~ " · " ~ m.get("role") ~
                 " (" ~ to!string(activeCount) ~ " active)";
             issueMemberStatusCard.backgroundColor = 0xDCFCE7;
@@ -686,42 +686,42 @@ class LibraryAppView : HorizontalLayout {
             newMember.set(k, toUTF8(ed.text));
         }
 
-        Record extraLoan;
-        foreach (k, ed; issueLoanExtraEditors) {
-            extraLoan.set(k, toUTF8(ed.text));
+        Record extraIssue;
+        foreach (k, ed; issueExtraEditors) {
+            extraIssue.set(k, toUTF8(ed.text));
         }
 
-        string loanId;
+        string issueId;
         string err;
-        if (!store.issueBook(bookId, cnic, newMember, toUTF8(issueDueDateInput.text), extraLoan, loanId, err)) {
+        if (!store.issueBook(bookId, cnic, newMember, toUTF8(issueDueDateInput.text), extraIssue, issueId, err)) {
             setStatus(err, true);
             return;
         }
 
         foreach (k, ed; onTheFlyMemberEditors)
             ed.text = ""d;
-        foreach (k, ed; issueLoanExtraEditors)
+        foreach (k, ed; issueExtraEditors)
             ed.text = ""d;
 
         refreshAll();
         onIssueCnicChanged();
-        setStatus("Issued " ~ bookId ~ " to CNIC " ~ cnic ~ " (" ~ loanId ~ ").");
+        setStatus("Issued book " ~ bookId ~ " to CNIC " ~ cnic ~ " (" ~ issueId ~ ").");
     }
 
-    private void handleReturnSelectedLoan() {
-        int r = loansGrid.row;
-        if (r < 0 || r >= cast(int) displayedLoanIds.length) {
-            setStatus("Select a loan row in the table to return.", true);
+    private void handleReturnSelectedIssue() {
+        int r = issuesGrid.row;
+        if (r < 0 || r >= cast(int) displayedIssueIds.length) {
+            setStatus("Select an issued book row in the table to return.", true);
             return;
         }
-        string loanId = displayedLoanIds[r];
+        string issueId = displayedIssueIds[r];
         string err;
-        if (!store.returnLoan(loanId, err)) {
+        if (!store.returnIssue(issueId, err)) {
             setStatus(err, true);
             return;
         }
         refreshAll();
-        setStatus("Returned loan " ~ loanId ~ ".");
+        setStatus("Returned issued book " ~ issueId ~ ".");
     }
 
     // =========================================================================
@@ -885,6 +885,10 @@ class LibraryAppView : HorizontalLayout {
         foreach (k, ed; bookFormEditors) {
             if (k == "copies")
                 ed.text = "1"d;
+            else if (k == "status")
+                ed.text = "Available"d;
+            else if (k == "dateAdded")
+                ed.text = toUTF32(todayIso());
             else
                 ed.text = ""d;
         }
@@ -1172,9 +1176,9 @@ class LibraryAppView : HorizontalLayout {
             refreshSchemaGrid();
             return true;
         };
-        schemaEntityLoanBtn = makeFilterPill("Loans Columns"d, false);
-        schemaEntityLoanBtn.click = delegate(Widget w) {
-            currentSchemaEntity = EntityType.loan;
+        schemaEntityIssueBtn = makeFilterPill("Issuance Columns"d, false);
+        schemaEntityIssueBtn.click = delegate(Widget w) {
+            currentSchemaEntity = EntityType.issue;
             clearSchemaEditor();
             refreshSchemaGrid();
             return true;
@@ -1182,7 +1186,7 @@ class LibraryAppView : HorizontalLayout {
 
         topBar.addChild(schemaEntityBookBtn);
         topBar.addChild(schemaEntityMemberBtn);
-        topBar.addChild(schemaEntityLoanBtn);
+        topBar.addChild(schemaEntityIssueBtn);
 
         auto spacer = new Widget();
         spacer.layoutWidth = FILL_PARENT;
@@ -1397,7 +1401,11 @@ class LibraryAppView : HorizontalLayout {
             if (f.key == "id") continue;
             string lbl = f.label ~ (f.required ? " *" : "");
             bookFormContainer.addChild(makeFieldLabel(toUTF32(lbl)));
-            auto ed = makeEditLine(f.key == "copies" ? "1"d : ""d);
+            dstring defaultVal = ""d;
+            if (f.key == "copies") defaultVal = "1"d;
+            else if (f.key == "status") defaultVal = "Available"d;
+            else if (f.key == "dateAdded") defaultVal = toUTF32(todayIso());
+            auto ed = makeEditLine(defaultVal);
             bookFormEditors[f.key] = ed;
             bookFormContainer.addChild(ed);
         }
@@ -1452,16 +1460,16 @@ class LibraryAppView : HorizontalLayout {
             }
         }
 
-        // 4. Rebuild Dynamic Extra Loan Fields inside Issue Desk
-        issueLoanExtraBox.removeAllChildren();
-        issueLoanExtraEditors.clear();
-        foreach (f; store.schemaFor(EntityType.loan)) {
+        // 4. Rebuild Dynamic Extra Issue Fields inside Issue Desk
+        issueExtraBox.removeAllChildren();
+        issueExtraEditors.clear();
+        foreach (f; store.schemaFor(EntityType.issue)) {
             if (f.core) continue;
             string lbl = f.label ~ (f.required ? " *" : "");
-            issueLoanExtraBox.addChild(makeFieldLabel(toUTF32(lbl)));
+            issueExtraBox.addChild(makeFieldLabel(toUTF32(lbl)));
             auto ed = makeEditLine(""d);
-            issueLoanExtraEditors[f.key] = ed;
-            issueLoanExtraBox.addChild(ed);
+            issueExtraEditors[f.key] = ed;
+            issueExtraBox.addChild(ed);
         }
     }
 
@@ -1471,21 +1479,21 @@ class LibraryAppView : HorizontalLayout {
     void refreshAll() {
         refreshSidebarStats();
         refreshIssueBookCombo();
-        refreshLoansGrid();
+        refreshIssuesGrid();
         refreshBooksGrid();
         refreshMembersGrid();
         refreshSchemaGrid();
     }
 
     private void refreshSidebarStats() {
-        int activeLoans = 0;
-        foreach (ref l; store.loans) {
-            if (l.get("returned_at").length == 0)
-                activeLoans++;
+        int activeIssues = 0;
+        foreach (ref iss; store.issues) {
+            if (iss.get("returned_at").length == 0)
+                activeIssues++;
         }
         statBooksText.text   = toUTF32("Books: " ~ to!string(store.books.length));
         statMembersText.text = toUTF32("Members: " ~ to!string(store.members.length));
-        statLoansText.text   = toUTF32("Active Loans: " ~ to!string(activeLoans));
+        statIssuesText.text  = toUTF32("Active Issues: " ~ to!string(activeIssues));
     }
 
     private void refreshIssueBookCombo() {
@@ -1509,8 +1517,11 @@ class LibraryAppView : HorizontalLayout {
                 if (!match) continue;
             }
             issueBookIds ~= id;
-            string label = "[" ~ id ~ "] " ~ b.get("title") ~ " (" ~ to!string(avail) ~ " left)";
+            string acc = b.get("accessionNo");
+            string prefix = acc.length > 0 ? ("#" ~ id ~ " (Acc " ~ acc ~ ")") : ("#" ~ id);
+            string label = "[" ~ prefix ~ "] " ~ b.get("title") ~ " (" ~ to!string(avail) ~ " left)";
             items ~= toUTF32(label);
+            if (items.length >= 250) break; // keep dropdown responsive on 2500+ books
         }
 
         issueBookCombo.items = items;
@@ -1518,40 +1529,40 @@ class LibraryAppView : HorizontalLayout {
             issueBookCombo.selectedItemIndex = 0;
     }
 
-    private void refreshLoansGrid() {
-        styleFilterPill(loanFilterActiveBtn,  loanFilterMode == "active");
-        styleFilterPill(loanFilterOverdueBtn, loanFilterMode == "overdue");
-        styleFilterPill(loanFilterAllBtn,     loanFilterMode == "all");
+    private void refreshIssuesGrid() {
+        styleFilterPill(issueFilterActiveBtn,  issueFilterMode == "active");
+        styleFilterPill(issueFilterOverdueBtn, issueFilterMode == "overdue");
+        styleFilterPill(issueFilterAllBtn,     issueFilterMode == "all");
 
-        string q = toUTF8(loanSearchInput.text).strip().toLower();
+        string q = toUTF8(issueSearchInput.text).strip().toLower();
         string today = todayIso();
 
-        FieldDef[] extraLoanFields;
-        foreach (f; store.schemaFor(EntityType.loan)) {
+        FieldDef[] extraIssueFields;
+        foreach (f; store.schemaFor(EntityType.issue)) {
             if (!f.core)
-                extraLoanFields ~= f;
+                extraIssueFields ~= f;
         }
 
-        string[] headers = ["Loan ID", "Status", "Book ID", "Book Title", "Member CNIC", "Member Name", "Role", "Issued", "Due", "Returned"];
-        int[] widths     = [85,        90,       80,        220,          130,           160,           85,     100,      100,   100];
-        foreach (f; extraLoanFields) {
+        string[] headers = ["Issue ID", "Status", "Book ID", "Book Title", "Member CNIC", "Member Name", "Role", "Issued", "Due", "Returned"];
+        int[] widths     = [85,         90,       80,        220,          130,           160,           85,     100,      100,   100];
+        foreach (f; extraIssueFields) {
             headers ~= f.label;
             widths ~= f.width;
         }
 
-        displayedLoanIds = [];
+        displayedIssueIds = [];
         dstring[][] rows;
 
-        foreach (ref l; store.loans) {
-            bool isReturned = l.get("returned_at").length > 0;
-            bool isOverdue = !isReturned && l.get("due_at").length > 0 && l.get("due_at") < today;
+        foreach (ref iss; store.issues) {
+            bool isReturned = iss.get("returned_at").length > 0;
+            bool isOverdue = !isReturned && iss.get("due_at").length > 0 && iss.get("due_at") < today;
             string status = isReturned ? "Returned" : (isOverdue ? "Overdue" : "Active");
 
-            if (loanFilterMode == "active" && isReturned) continue;
-            if (loanFilterMode == "overdue" && !isOverdue) continue;
+            if (issueFilterMode == "active" && isReturned) continue;
+            if (issueFilterMode == "overdue" && !isOverdue) continue;
 
-            string bookId = l.get("book_id");
-            string cnic = l.get("member_cnic");
+            string bookId = iss.get("book_id");
+            string cnic = iss.get("member_cnic");
             auto book = store.findBook(bookId);
             auto member = store.findMemberByCnic(cnic);
             string bookTitle = book ? book.get("title") : "";
@@ -1559,30 +1570,30 @@ class LibraryAppView : HorizontalLayout {
             string memberRole = member ? member.get("role") : "";
 
             if (q.length > 0) {
-                string hay = (l.get("id") ~ " " ~ bookId ~ " " ~ bookTitle ~ " " ~ cnic ~ " " ~ memberName ~ " " ~ status).toLower();
+                string hay = (iss.get("id") ~ " " ~ bookId ~ " " ~ bookTitle ~ " " ~ cnic ~ " " ~ memberName ~ " " ~ status).toLower();
                 if (!hay.canFind(q)) continue;
             }
 
-            displayedLoanIds ~= l.get("id");
+            displayedIssueIds ~= iss.get("id");
             dstring[] row = [
-                toUTF32(l.get("id")),
+                toUTF32(iss.get("id")),
                 toUTF32(status),
                 toUTF32(bookId),
                 toUTF32(bookTitle),
                 toUTF32(cnic),
                 toUTF32(memberName),
                 toUTF32(memberRole),
-                toUTF32(l.get("issued_at")),
-                toUTF32(l.get("due_at")),
-                toUTF32(l.get("returned_at"))
+                toUTF32(iss.get("issued_at")),
+                toUTF32(iss.get("due_at")),
+                toUTF32(iss.get("returned_at"))
             ];
-            foreach (f; extraLoanFields) {
-                row ~= toUTF32(l.get(f.key));
+            foreach (f; extraIssueFields) {
+                row ~= toUTF32(iss.get(f.key));
             }
             rows ~= row;
         }
 
-        populateGrid(loansGrid, headers, widths, rows);
+        populateGrid(issuesGrid, headers, widths, rows);
     }
 
     private void refreshBooksGrid() {
@@ -1651,7 +1662,7 @@ class LibraryAppView : HorizontalLayout {
             headers ~= f.label;
             widths ~= f.width;
         }
-        headers ~= "Active Loans";
+        headers ~= "Active Issues";
         widths ~= 100;
 
         displayedMemberCnics = [];
@@ -1682,7 +1693,7 @@ class LibraryAppView : HorizontalLayout {
             foreach (f; schema) {
                 row ~= toUTF32(m.get(f.key));
             }
-            row ~= toUTF32(to!string(store.activeLoanCountForMember(cnic)));
+            row ~= toUTF32(to!string(store.activeIssueCountForMember(cnic)));
             rows ~= row;
         }
 
@@ -1692,7 +1703,7 @@ class LibraryAppView : HorizontalLayout {
     private void refreshSchemaGrid() {
         styleFilterPill(schemaEntityBookBtn,   currentSchemaEntity == EntityType.book);
         styleFilterPill(schemaEntityMemberBtn, currentSchemaEntity == EntityType.member);
-        styleFilterPill(schemaEntityLoanBtn,   currentSchemaEntity == EntityType.loan);
+        styleFilterPill(schemaEntityIssueBtn,  currentSchemaEntity == EntityType.issue);
 
         auto fields = store.schemaFor(currentSchemaEntity);
         string[] headers = ["#", "Key", "Column Title", "Type", "Required", "Kind"];

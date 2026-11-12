@@ -14,7 +14,7 @@ import std.uni : toLower;
 enum EntityType : string {
     book = "book",
     member = "member",
-    loan = "loan"
+    issue = "issue"
 }
 
 /// Field data types supported by the dynamic schema.
@@ -36,7 +36,7 @@ struct FieldDef {
 }
 
 /// A generic entity record backed by a string map.
-/// Missing or empty values represent NULL fields.
+/// Missing or empty values represent NULL/empty fields.
 struct Record {
     string[string] data;
 
@@ -47,12 +47,7 @@ struct Record {
     }
 
     void set(string key, string value) {
-        string trimmed = value.strip();
-        if (trimmed.length == 0) {
-            data.remove(key);
-        } else {
-            data[key] = trimmed;
-        }
+        data[key] = value.strip();
     }
 }
 
@@ -80,24 +75,27 @@ string datePlusDaysIso(int days) {
     return target.toISOExtString();
 }
 
-/// Single-workstation persistent store with dynamic schemas for Books, Members, and Loans.
+/// Single-workstation persistent store with dynamic schemas for Books, Members, and Issuance.
 class LibraryStore {
     string filePath;
 
     FieldDef[][EntityType] schemas;
     Record[] books;
     Record[] members;
-    Record[] loans;
+    Record[] issues;
 
-    private int nextBookSeq = 1001;
-    private int nextLoanSeq = 5001;
+    private int nextBookSeq = 1;
+    private int nextIssueSeq = 5001;
 
-    this(string path = "library_data.json") {
+    this(string path = "data/library_data.json") {
         this.filePath = path;
         if (exists(filePath)) {
             try {
                 load();
-                ensureCoreSchemas();
+                bool modified = ensureCoreSchemasAndDefaults();
+                if (modified) {
+                    save();
+                }
                 return;
             } catch (Exception) {
                 // Fall through to seed defaults if file is corrupted
@@ -108,35 +106,38 @@ class LibraryStore {
         save();
     }
 
-    /// Initialize default schemas (core + librarian-editable fields).
+    /// Initialize default schemas combining legacy fields and full library fields.
     void initDefaultSchemas() {
         schemas[EntityType.book] = [
-            FieldDef("id",        "ID",         FieldType.text,   true,  true,  80),
-            FieldDef("title",     "Title",      FieldType.text,   true,  true,  250),
-            FieldDef("author",    "Author",     FieldType.text,   false, false, 170),
-            FieldDef("isbn",      "ISBN",       FieldType.text,   false, false, 140),
-            FieldDef("category",  "Category",   FieldType.text,   false, false, 130),
-            FieldDef("publisher", "Publisher",  FieldType.text,   false, false, 150),
-            FieldDef("year",      "Year",       FieldType.number, false, false, 75),
-            FieldDef("edition",   "Edition",    FieldType.text,   false, false, 85),
-            FieldDef("shelf",     "Shelf",      FieldType.text,   false, false, 85),
-            FieldDef("copies",    "Copies",     FieldType.number, true,  true,  75),
-            FieldDef("language",  "Language",   FieldType.text,   false, false, 100),
-            FieldDef("notes",     "Notes",      FieldType.text,   false, false, 180)
+            FieldDef("id",          "ID",           FieldType.text,   true,  true,  70),
+            FieldDef("accessionNo", "Accession No", FieldType.text,   false, false, 105),
+            FieldDef("title",       "Title",        FieldType.text,   true,  true,  250),
+            FieldDef("author",      "Author",       FieldType.text,   false, false, 170),
+            FieldDef("category",    "Category",     FieldType.text,   false, false, 130),
+            FieldDef("publisher",   "Publisher",    FieldType.text,   false, false, 140),
+            FieldDef("status",      "Status",       FieldType.text,   true,  false, 95),
+            FieldDef("copies",      "Copies",       FieldType.number, true,  true,  75),
+            FieldDef("isbn",        "ISBN",         FieldType.text,   false, false, 130),
+            FieldDef("year",        "Year",         FieldType.number, false, false, 75),
+            FieldDef("edition",     "Edition",      FieldType.text,   false, false, 85),
+            FieldDef("shelf",       "Shelf",        FieldType.text,   false, false, 85),
+            FieldDef("language",    "Language",     FieldType.text,   false, false, 95),
+            FieldDef("dateAdded",   "Date Added",   FieldType.date,   false, false, 105),
+            FieldDef("notes",       "Notes",        FieldType.text,   false, false, 160)
         ];
 
         schemas[EntityType.member] = [
-            FieldDef("cnic",       "CNIC",       FieldType.text,   true,  true,  135),
-            FieldDef("name",       "Name",       FieldType.text,   true,  true,  190),
-            FieldDef("role",       "Role",       FieldType.role,   true,  true,  100),
-            FieldDef("department", "Department", FieldType.text,   false, false, 150),
-            FieldDef("roll_no",    "Roll / Emp #", FieldType.text, false, false, 120),
-            FieldDef("phone",      "Phone",      FieldType.text,   false, false, 130),
-            FieldDef("semester",   "Semester",   FieldType.text,   false, false, 90)
+            FieldDef("cnic",       "CNIC",         FieldType.text,   true,  true,  135),
+            FieldDef("name",       "Name",         FieldType.text,   true,  true,  190),
+            FieldDef("role",       "Role",         FieldType.role,   true,  true,  100),
+            FieldDef("department", "Department",   FieldType.text,   false, false, 150),
+            FieldDef("roll_no",    "Roll / Emp #", FieldType.text,   false, false, 120),
+            FieldDef("phone",      "Phone",        FieldType.text,   false, false, 130),
+            FieldDef("semester",   "Semester",     FieldType.text,   false, false, 90)
         ];
 
-        schemas[EntityType.loan] = [
-            FieldDef("id",          "Loan ID",     FieldType.text, true,  true,  90),
+        schemas[EntityType.issue] = [
+            FieldDef("id",          "Issue ID",    FieldType.text, true,  true,  90),
             FieldDef("book_id",     "Book ID",     FieldType.text, true,  true,  90),
             FieldDef("member_cnic", "Member CNIC", FieldType.text, true,  true,  135),
             FieldDef("issued_at",   "Issued",      FieldType.date, true,  true,  105),
@@ -147,30 +148,108 @@ class LibraryStore {
         ];
     }
 
-    private void ensureCoreSchemas() {
-        if (EntityType.book !in schemas || schemas[EntityType.book].length == 0)
+    /// Ensure schemas exist and integrate any missing fields into records with default/empty values.
+    private bool ensureCoreSchemasAndDefaults() {
+        bool modified = false;
+        if (EntityType.book !in schemas || schemas[EntityType.book].length == 0 ||
+            EntityType.member !in schemas || schemas[EntityType.member].length == 0 ||
+            EntityType.issue !in schemas || schemas[EntityType.issue].length == 0) {
             initDefaultSchemas();
+            modified = true;
+        }
+
+        // Compute nextBookSeq from existing book IDs
+        int maxBookId = 0;
+        foreach (ref b; books) {
+            string rawId = b.get("id");
+            if (rawId.startsWith("B-"))
+                rawId = rawId[2 .. $];
+            try {
+                int n = to!int(rawId);
+                if (n > maxBookId) maxBookId = n;
+            } catch (Exception) {}
+
+            // Integrate missing book schema fields with default values
+            if (b.get("copies").length == 0) {
+                b.set("copies", "1");
+                modified = true;
+            }
+            if (b.get("status").length == 0) {
+                b.set("status", "Available");
+                modified = true;
+            }
+            foreach (f; schemas[EntityType.book]) {
+                if (f.key !in b.data) {
+                    b.data[f.key] = "";
+                    modified = true;
+                }
+            }
+        }
+        if (maxBookId >= nextBookSeq) {
+            nextBookSeq = maxBookId + 1;
+            modified = true;
+        }
+
+        // Integrate missing member schema fields
+        foreach (ref m; members) {
+            foreach (f; schemas[EntityType.member]) {
+                if (f.key !in m.data) {
+                    m.data[f.key] = "";
+                    modified = true;
+                }
+            }
+        }
+
+        // Compute nextIssueSeq and integrate missing issue schema fields
+        int maxIssueId = 5000;
+        foreach (ref iss; issues) {
+            string rawId = iss.get("id");
+            if (rawId.startsWith("I-") || rawId.startsWith("L-"))
+                rawId = rawId[2 .. $];
+            try {
+                int n = to!int(rawId);
+                if (n > maxIssueId) maxIssueId = n;
+            } catch (Exception) {}
+
+            foreach (f; schemas[EntityType.issue]) {
+                if (f.key !in iss.data) {
+                    iss.data[f.key] = "";
+                    modified = true;
+                }
+            }
+        }
+        if (maxIssueId >= nextIssueSeq) {
+            nextIssueSeq = maxIssueId + 1;
+            modified = true;
+        }
+
+        return modified;
     }
 
     private void seedSampleData() {
         books = [];
         members = [];
-        loans = [];
+        issues = [];
 
         void addSampleBook(string title, string author, string isbn, string cat,
                            string pub, string year, string ed, string shelf, string copies, string lang = "English") {
             Record r;
-            r.set("id", "B-" ~ to!string(nextBookSeq++));
+            string idStr = to!string(nextBookSeq++);
+            r.set("id", idStr);
+            r.set("accessionNo", idStr);
             r.set("title", title);
             r.set("author", author);
             r.set("isbn", isbn);
             r.set("category", cat);
             r.set("publisher", pub);
+            r.set("status", "Available");
             r.set("year", year);
             r.set("edition", ed);
             r.set("shelf", shelf);
             r.set("copies", copies);
             r.set("language", lang);
+            r.set("dateAdded", todayIso());
+            r.set("notes", "");
             books ~= r;
         }
 
@@ -202,15 +281,17 @@ class LibraryStore {
         addSampleMember("3520244556677", "Hamza Ali", "Student", "Computer Science", "BSCS-23-014", "03334455667", "5th");
         addSampleMember("3520277665543", "Ayesha Siddiqui", "Student", "Physics", "BSPH-24-008", "03457766554", "3rd");
 
-        // Sample active loan
-        Record loan1;
-        loan1.set("id", "L-" ~ to!string(nextLoanSeq++));
-        loan1.set("book_id", "B-1001");
-        loan1.set("member_cnic", "3520244556677");
-        loan1.set("issued_at", todayIso());
-        loan1.set("due_at", datePlusDaysIso(14));
-        loan1.set("condition", "Good");
-        loans ~= loan1;
+        // Sample active issue
+        Record issue1;
+        issue1.set("id", "I-" ~ to!string(nextIssueSeq++));
+        issue1.set("book_id", "1");
+        issue1.set("member_cnic", "3520244556677");
+        issue1.set("issued_at", todayIso());
+        issue1.set("due_at", datePlusDaysIso(14));
+        issue1.set("returned_at", "");
+        issue1.set("condition", "Good");
+        issue1.set("remarks", "");
+        issues ~= issue1;
     }
 
     FieldDef[] schemaFor(EntityType type) {
@@ -242,6 +323,16 @@ class LibraryStore {
         else if (fieldType == FieldType.date) width = 105;
 
         schemas[type] ~= FieldDef(key, cleanLabel, fieldType, false, required, width);
+
+        // Populate default empty value in existing records of this entity
+        if (type == EntityType.book) {
+            foreach (ref r; books) if (key !in r.data) r.data[key] = "";
+        } else if (type == EntityType.member) {
+            foreach (ref r; members) if (key !in r.data) r.data[key] = "";
+        } else if (type == EntityType.issue) {
+            foreach (ref r; issues) if (key !in r.data) r.data[key] = "";
+        }
+
         save();
         return true;
     }
@@ -332,7 +423,7 @@ class LibraryStore {
     // --- Book Operations ---
 
     string nextBookId() {
-        return "B-" ~ to!string(nextBookSeq++);
+        return to!string(nextBookSeq++);
     }
 
     Record* findBook(string id) {
@@ -343,10 +434,10 @@ class LibraryStore {
         return null;
     }
 
-    int activeLoanCountForBook(string bookId) {
+    int activeIssueCountForBook(string bookId) {
         int count = 0;
-        foreach (ref l; loans) {
-            if (l.get("book_id") == bookId && l.get("returned_at").length == 0)
+        foreach (ref iss; issues) {
+            if (iss.get("book_id") == bookId && iss.get("returned_at").length == 0)
                 count++;
         }
         return count;
@@ -356,7 +447,9 @@ class LibraryStore {
         auto b = findBook(bookId);
         if (!b) return 0;
         try {
-            int c = to!int(b.get("copies", "1"));
+            string cStr = b.get("copies", "1");
+            if (cStr.length == 0) return 1;
+            int c = to!int(cStr);
             return c < 0 ? 0 : c;
         } catch (Exception) {
             return 1;
@@ -364,8 +457,17 @@ class LibraryStore {
     }
 
     int availableCopiesForBook(string bookId) {
-        int avail = totalCopiesForBook(bookId) - activeLoanCountForBook(bookId);
+        int avail = totalCopiesForBook(bookId) - activeIssueCountForBook(bookId);
         return avail < 0 ? 0 : avail;
+    }
+
+    private void syncBookStatus(string bookId) {
+        auto b = findBook(bookId);
+        if (!b) return;
+        if (availableCopiesForBook(bookId) <= 0)
+            b.set("status", "Issued");
+        else
+            b.set("status", "Available");
     }
 
     bool upsertBook(Record rec, out string savedId, out string err) {
@@ -388,10 +490,18 @@ class LibraryStore {
             }
         }
 
+        if (rec.get("status").length == 0)
+            rec.set("status", "Available");
+        if (rec.get("dateAdded").length == 0)
+            rec.set("dateAdded", todayIso());
+
         foreach (f; schemas[EntityType.book]) {
             if (!f.core && f.required && rec.get(f.key).length == 0) {
                 err = f.label ~ " is required.";
                 return false;
+            }
+            if (f.key !in rec.data) {
+                rec.data[f.key] = "";
             }
         }
 
@@ -399,6 +509,8 @@ class LibraryStore {
         if (id.length == 0) {
             id = nextBookId();
             rec.set("id", id);
+            if (rec.get("accessionNo").length == 0)
+                rec.set("accessionNo", id);
             books ~= rec;
         } else {
             bool found = false;
@@ -412,13 +524,14 @@ class LibraryStore {
             if (!found)
                 books ~= rec;
         }
+        syncBookStatus(id);
         savedId = id;
         save();
         return true;
     }
 
     bool deleteBook(string bookId, out string err) {
-        if (activeLoanCountForBook(bookId) > 0) {
+        if (activeIssueCountForBook(bookId) > 0) {
             err = "Cannot delete a book while copies are currently issued.";
             return false;
         }
@@ -450,11 +563,11 @@ class LibraryStore {
         return null;
     }
 
-    int activeLoanCountForMember(string rawCnic) {
+    int activeIssueCountForMember(string rawCnic) {
         string norm = normalizeCnic(rawCnic);
         int count = 0;
-        foreach (ref l; loans) {
-            if (normalizeCnic(l.get("member_cnic")) == norm && l.get("returned_at").length == 0)
+        foreach (ref iss; issues) {
+            if (normalizeCnic(iss.get("member_cnic")) == norm && iss.get("returned_at").length == 0)
                 count++;
         }
         return count;
@@ -483,6 +596,9 @@ class LibraryStore {
                 err = f.label ~ " is required.";
                 return false;
             }
+            if (f.key !in rec.data) {
+                rec.data[f.key] = "";
+            }
         }
 
         bool found = false;
@@ -503,7 +619,7 @@ class LibraryStore {
 
     bool deleteMember(string rawCnic, out string err) {
         string cnic = normalizeCnic(rawCnic);
-        if (activeLoanCountForMember(cnic) > 0) {
+        if (activeIssueCountForMember(cnic) > 0) {
             err = "Cannot delete a member who has unreturned books.";
             return false;
         }
@@ -531,8 +647,8 @@ class LibraryStore {
         string rawCnic,
         Record newMemberRecordIfMissing,
         string dueDateIso,
-        Record extraLoanFields,
-        out string loanId,
+        Record extraIssueFields,
+        out string issueId,
         out string err
     ) {
         auto book = findBook(bookId);
@@ -560,49 +676,59 @@ class LibraryStore {
             }
         }
 
-        Record loan = extraLoanFields;
-        loanId = "L-" ~ to!string(nextLoanSeq++);
-        loan.set("id", loanId);
-        loan.set("book_id", bookId);
-        loan.set("member_cnic", cnic);
-        loan.set("issued_at", todayIso());
-        loan.set("due_at", dueDateIso.strip().length ? dueDateIso.strip() : datePlusDaysIso(14));
-        loan.set("returned_at", "");
+        Record issue = extraIssueFields;
+        issueId = "I-" ~ to!string(nextIssueSeq++);
+        issue.set("id", issueId);
+        issue.set("book_id", bookId);
+        issue.set("member_cnic", cnic);
+        issue.set("issued_at", todayIso());
+        issue.set("due_at", dueDateIso.strip().length ? dueDateIso.strip() : datePlusDaysIso(14));
+        issue.set("returned_at", "");
 
-        foreach (f; schemas[EntityType.loan]) {
-            if (!f.core && f.required && loan.get(f.key).length == 0) {
+        foreach (f; schemas[EntityType.issue]) {
+            if (!f.core && f.required && issue.get(f.key).length == 0) {
                 err = f.label ~ " is required.";
                 return false;
             }
+            if (f.key !in issue.data) {
+                issue.data[f.key] = "";
+            }
         }
 
-        loans = [loan] ~ loans;
+        issues = [issue] ~ issues;
+        syncBookStatus(bookId);
         save();
         return true;
     }
 
-    bool returnLoan(string loanId, out string err) {
-        foreach (ref l; loans) {
-            if (l.get("id") == loanId) {
-                if (l.get("returned_at").length > 0) {
+    bool returnIssue(string issueId, out string err) {
+        foreach (ref iss; issues) {
+            if (iss.get("id") == issueId) {
+                if (iss.get("returned_at").length > 0) {
                     err = "This book has already been returned.";
                     return false;
                 }
-                l.set("returned_at", todayIso());
+                iss.set("returned_at", todayIso());
+                syncBookStatus(iss.get("book_id"));
                 save();
                 return true;
             }
         }
-        err = "Loan record not found.";
+        err = "Issue record not found.";
         return false;
     }
 
     // --- Persistence ---
 
     void save() {
+        string dir = dirName(filePath);
+        if (dir.length > 0 && dir != "." && !exists(dir)) {
+            mkdirRecurse(dir);
+        }
+
         JSONValue root = JSONValue(string[string].init);
         root.object["nextBookSeq"] = JSONValue(nextBookSeq);
-        root.object["nextLoanSeq"] = JSONValue(nextLoanSeq);
+        root.object["nextIssueSeq"] = JSONValue(nextIssueSeq);
 
         JSONValue schemasJson = JSONValue(string[string].init);
         foreach (entityType, fieldList; schemas) {
@@ -611,7 +737,7 @@ class LibraryStore {
                 JSONValue fj = JSONValue(string[string].init);
                 fj.object["key"] = JSONValue(f.key);
                 fj.object["label"] = JSONValue(f.label);
-                fj.object["type"] = JSONValue( cast(string) f.type );
+                fj.object["type"] = JSONValue(cast(string) f.type);
                 fj.object["core"] = JSONValue(f.core);
                 fj.object["required"] = JSONValue(f.required);
                 fj.object["width"] = JSONValue(f.width);
@@ -621,24 +747,33 @@ class LibraryStore {
         }
         root.object["schemas"] = schemasJson;
 
-        static JSONValue serializeRecords(Record[] recs) {
+        static JSONValue serializeRecords(Record[] recs, FieldDef[] schemaFields) {
             JSONValue[] arr;
             foreach (r; recs) {
                 JSONValue obj = JSONValue(string[string].init);
+                // Ensure all schema fields exist in serialized JSON
+                foreach (f; schemaFields) {
+                    obj.object[f.key] = JSONValue(r.get(f.key, ""));
+                }
+                // Preserve any extra keys on the record
                 foreach (k, v; r.data) {
-                    obj.object[k] = JSONValue(v);
+                    if (k !in obj.object)
+                        obj.object[k] = JSONValue(v);
                 }
                 arr ~= obj;
             }
             return JSONValue(arr);
         }
 
-        root.object["books"] = serializeRecords(books);
-        root.object["members"] = serializeRecords(members);
-        root.object["loans"] = serializeRecords(loans);
+        root.object["books"] = serializeRecords(books, schemaFor(EntityType.book));
+        root.object["members"] = serializeRecords(members, schemaFor(EntityType.member));
+        root.object["issuance"] = serializeRecords(issues, schemaFor(EntityType.issue));
 
         string tmpPath = filePath ~ ".tmp";
         std.file.write(tmpPath, root.toPrettyString());
+        if (exists(filePath)) {
+            remove(filePath);
+        }
         rename(tmpPath, filePath);
     }
 
@@ -648,13 +783,18 @@ class LibraryStore {
 
         if ("nextBookSeq" in root.object)
             nextBookSeq = cast(int) root.object["nextBookSeq"].integer;
-        if ("nextLoanSeq" in root.object)
-            nextLoanSeq = cast(int) root.object["nextLoanSeq"].integer;
+        if ("nextIssueSeq" in root.object)
+            nextIssueSeq = cast(int) root.object["nextIssueSeq"].integer;
+        else if ("nextLoanSeq" in root.object)
+            nextIssueSeq = cast(int) root.object["nextLoanSeq"].integer;
 
         if ("schemas" in root.object) {
             auto sj = root.object["schemas"];
-            foreach (EntityType et; [EntityType.book, EntityType.member, EntityType.loan]) {
+            foreach (EntityType et; [EntityType.book, EntityType.member, EntityType.issue]) {
                 string key = cast(string) et;
+                if (et == EntityType.issue && key !in sj.object && "loan" in sj.object) {
+                    key = "loan";
+                }
                 if (key in sj.object) {
                     FieldDef[] list;
                     foreach (item; sj.object[key].array) {
@@ -680,6 +820,14 @@ class LibraryStore {
                 foreach (k, v; item.object) {
                     if (v.type == JSONType.string)
                         r.set(k, v.str);
+                    else if (v.type == JSONType.integer)
+                        r.set(k, to!string(v.integer));
+                    else if (v.type == JSONType.uinteger)
+                        r.set(k, to!string(v.uinteger));
+                    else if (v.type == JSONType.true_)
+                        r.set(k, "true");
+                    else if (v.type == JSONType.false_)
+                        r.set(k, "false");
                 }
                 res ~= r;
             }
@@ -690,7 +838,9 @@ class LibraryStore {
             books = deserializeRecords(root.object["books"]);
         if ("members" in root.object)
             members = deserializeRecords(root.object["members"]);
-        if ("loans" in root.object)
-            loans = deserializeRecords(root.object["loans"]);
+        if ("issuance" in root.object)
+            issues = deserializeRecords(root.object["issuance"]);
+        else if ("loans" in root.object)
+            issues = deserializeRecords(root.object["loans"]);
     }
 }
