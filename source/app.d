@@ -14,6 +14,9 @@ extern (C) int UIAppMain(string[] args) {
     }
 
     Platform.instance.uiTheme = "theme_default";
+    if (currentTheme) {
+        currentTheme.fontFace = "Segoe UI,Tahoma,Arial";
+    }
 
     auto dataStore = new LibraryStore("data/library_data.json");
     Window window = Platform.instance.createWindow(
