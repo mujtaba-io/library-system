@@ -6,8 +6,12 @@ import dlangui.widgets.combobox;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.file : exists;
+import std.path : absolutePath;
+import std.process : spawnProcess;
 import std.string;
 import std.uni : toLower;
+import report;
 import store;
 
 // =============================================================================
@@ -15,254 +19,6 @@ import store;
 // DLangUI uses 0xAARRGGBB where AA=0x00 is 100% OPAQUE and AA=0xFF is 100% TRANSPARENT.
 // All solid colors below use 0x00RRGGBB (written as 0xRRGGBB).
 // =============================================================================
-
-// =============================================================================
-// Urdu / Arabic Contextual Shaper & Visual BiDi Helper for DLangUI
-// Converts logical Urdu/Arabic codepoints (U+0600..U+06FF) into connected
-// Arabic Presentation Forms-A/B (U+FB50..U+FEFF) and reorders RTL runs for
-// DLangUI's left-to-right glyph renderer.
-// =============================================================================
-
-private struct ArabicForms {
-    dchar isolated;
-    dchar final_;
-    dchar initial;
-    dchar medial;
-    bool joinsLeft; // true = dual-joining, false = right-joining only
-}
-
-private ArabicForms getArabicForms(dchar c) pure nothrow @nogc {
-    switch (c) {
-        // Right-joining only letters (Dal, Raa, Waw, Alef variants, Yet/Bari Ye)
-        case 0x0621: return ArabicForms(0xFE80, 0xFE80, 0xFE80, 0xFE80, false); // Hamza
-        case 0x0622: return ArabicForms(0xFE81, 0xFE82, 0xFE81, 0xFE82, false); // Alef Madda
-        case 0x0623: return ArabicForms(0xFE83, 0xFE84, 0xFE83, 0xFE84, false); // Alef Hamza Above
-        case 0x0624: return ArabicForms(0xFE85, 0xFE86, 0xFE85, 0xFE86, false); // Waw Hamza
-        case 0x0625: return ArabicForms(0xFE87, 0xFE88, 0xFE87, 0xFE88, false); // Alef Hamza Below
-        case 0x0627: return ArabicForms(0xFE8D, 0xFE8E, 0xFE8D, 0xFE8E, false); // Alef
-        case 0x0629: return ArabicForms(0xFE93, 0xFE94, 0xFE93, 0xFE94, false); // Teh Marbuta
-        case 0x062F: return ArabicForms(0xFED9, 0xFEDA, 0xFED9, 0xFEDA, false); // Dal
-        case 0x0630: return ArabicForms(0xFEDB, 0xFEDC, 0xFEDB, 0xFEDC, false); // Thal
-        case 0x0631: return ArabicForms(0xFEDD, 0xFEDE, 0xFEDD, 0xFEDE, false); // Reh
-        case 0x0632: return ArabicForms(0xFEDF, 0xFEE0, 0xFEDF, 0xFEE0, false); // Zain
-        case 0x0648: return ArabicForms(0xFEED, 0xFEEE, 0xFEED, 0xFEEE, false); // Waw
-        case 0x0649: return ArabicForms(0xFEEF, 0xFEF0, 0xFEEF, 0xFEF0, false); // Alef Maksura
-        case 0x0688: return ArabicForms(0xFB88, 0xFB89, 0xFB88, 0xFB89, false); // Urdu Ddal (ڈ)
-        case 0x0691: return ArabicForms(0xFB8C, 0xFB8D, 0xFB8C, 0xFB8D, false); // Urdu Rreh (ڑ)
-        case 0x0698: return ArabicForms(0xFB8A, 0xFB8B, 0xFB8A, 0xFB8B, false); // Jeh (ژ)
-        case 0x06BA: return ArabicForms(0xFB9E, 0xFB9F, 0xFB9E, 0xFB9F, false); // Urdu Noon Ghunna (ں)
-        case 0x06C0: return ArabicForms(0xFBA4, 0xFBA5, 0xFBA4, 0xFBA5, false); // Heh with Yeh above (ۂ)
-        case 0x06C2: return ArabicForms(0xFBA4, 0xFBA5, 0xFBA4, 0xFBA5, false); // Heh Goal with Hamza (ۂ)
-        case 0x06C3: return ArabicForms(0xFE93, 0xFE94, 0xFE93, 0xFE94, false); // Teh Marbuta Goal (ۃ)
-        case 0x06D2: return ArabicForms(0xFBAE, 0xFBAF, 0xFBAE, 0xFBAF, false); // Urdu Bari Ye (ے)
-        case 0x06D3: return ArabicForms(0xFBB0, 0xFBB1, 0xFBB0, 0xFBB1, false); // Urdu Bari Ye with Hamza (ۓ)
-
-        // Dual-joining letters (join both right and left)
-        case 0x0626: return ArabicForms(0xFE89, 0xFE8A, 0xFE8B, 0xFE8C, true); // Yeh Hamza (ئ)
-        case 0x0628: return ArabicForms(0xFE8F, 0xFE90, 0xFE91, 0xFE92, true); // Beh (ب)
-        case 0x067E: return ArabicForms(0xFB56, 0xFB57, 0xFB58, 0xFB59, true); // Urdu Peh (پ)
-        case 0x062A: return ArabicForms(0xFE95, 0xFE96, 0xFE97, 0xFE98, true); // Teh (ت)
-        case 0x0679: return ArabicForms(0xFB66, 0xFB67, 0xFB68, 0xFB69, true); // Urdu Tteh (ٹ)
-        case 0x062B: return ArabicForms(0xFE99, 0xFE9A, 0xFE9B, 0xFE9C, true); // Theh (ث)
-        case 0x062C: return ArabicForms(0xFE9D, 0xFE9E, 0xFE9F, 0xFEA0, true); // Jeem (ج)
-        case 0x0686: return ArabicForms(0xFB7A, 0xFB7B, 0xFB7C, 0xFB7D, true); // Urdu Tcheh (چ)
-        case 0x062D: return ArabicForms(0xFEA1, 0xFEA2, 0xFEA3, 0xFEA4, true); // Hah (ح)
-        case 0x062E: return ArabicForms(0xFEA5, 0xFEA6, 0xFEA7, 0xFEA8, true); // Khah (خ)
-        case 0x0633: return ArabicForms(0xFEB1, 0xFEB2, 0xFEB3, 0xFEB4, true); // Seen (س)
-        case 0x0634: return ArabicForms(0xFEB5, 0xFEB6, 0xFEB7, 0xFEB8, true); // Sheen (ش)
-        case 0x0635: return ArabicForms(0xFEB9, 0xFEBA, 0xFEBB, 0xFEBC, true); // Sad (ص)
-        case 0x0636: return ArabicForms(0xFEBD, 0xFEBE, 0xFEBF, 0xFEC0, true); // Dad (ض)
-        case 0x0637: return ArabicForms(0xFEC1, 0xFEC2, 0xFEC3, 0xFEC4, true); // Tah (ط)
-        case 0x0638: return ArabicForms(0xFEC5, 0xFEC6, 0xFEC7, 0xFEC8, true); // Zah (ظ)
-        case 0x0639: return ArabicForms(0xFEC9, 0xFECA, 0xFECB, 0xFECC, true); // Ain (ع)
-        case 0x063A: return ArabicForms(0xFECD, 0xFECE, 0xFECF, 0xFED0, true); // Ghain (غ)
-        case 0x0640: return ArabicForms(0x0640, 0x0640, 0x0640, 0x0640, true); // Tatweel
-        case 0x0641: return ArabicForms(0xFED1, 0xFED2, 0xFED3, 0xFED4, true); // Feh (ف)
-        case 0x0642: return ArabicForms(0xFED5, 0xFED6, 0xFED7, 0xFED8, true); // Qaf (ق)
-        case 0x0643: return ArabicForms(0xFED9, 0xFEDA, 0xFEDB, 0xFEDC, true); // Arabic Kaf -> mapped below
-        case 0x06A9: return ArabicForms(0xFB8E, 0xFB8F, 0xFB90, 0xFB91, true); // Urdu Keheh (ک)
-        case 0x06AF: return ArabicForms(0xFB92, 0xFB93, 0xFB94, 0xFB95, true); // Urdu Gaf (گ)
-        case 0x0644: return ArabicForms(0xFEDD, 0xFEDE, 0xFEDF, 0xFEE0, true); // Lam -> fixed below
-        case 0x0645: return ArabicForms(0xFEE1, 0xFEE2, 0xFEE3, 0xFEE4, true); // Meem (م)
-        case 0x0646: return ArabicForms(0xFEE5, 0xFEE6, 0xFEE7, 0xFEE8, true); // Noon (ن)
-        case 0x0647: return ArabicForms(0xFEE9, 0xFEEA, 0xFEEB, 0xFEEC, true); // Heh (ه)
-        case 0x06C1: return ArabicForms(0xFBA6, 0xFBA7, 0xFBA8, 0xFBA9, true); // Urdu Heh Goal (ہ)
-        case 0x06BE: return ArabicForms(0xFBAA, 0xFBAB, 0xFBAC, 0xFBAD, true); // Urdu Heh Doachashmee (ھ)
-        case 0x064A: return ArabicForms(0xFEF1, 0xFEF2, 0xFEF3, 0xFEF4, true); // Arabic Yeh (ي)
-        case 0x06CC: return ArabicForms(0xFBFC, 0xFBFD, 0xFBFE, 0xFBFF, true); // Urdu Farsi Yeh (ی)
-        default:     return ArabicForms(0, 0, 0, 0, false);
-    }
-}
-
-private ArabicForms lookupArabicLetter(dchar c) pure nothrow @nogc {
-    // Fix exact codepoints for Dal/Reh/Kaf/Lam in Arabic Presentation Forms-B:
-    switch (c) {
-        case 0x062F: return ArabicForms(0xFEA9, 0xFEAA, 0xFEA9, 0xFEAA, false); // Dal (د)
-        case 0x0630: return ArabicForms(0xFEAB, 0xFEAC, 0xFEAB, 0xFEAC, false); // Thal (ذ)
-        case 0x0631: return ArabicForms(0xFEAD, 0xFEAE, 0xFEAD, 0xFEAE, false); // Reh (ر)
-        case 0x0632: return ArabicForms(0xFEAF, 0xFEB0, 0xFEAF, 0xFEB0, false); // Zain (ز)
-        case 0x0643: return ArabicForms(0xFED9, 0xFEDA, 0xFEDB, 0xFEDC, true);  // Kaf (ك)
-        case 0x0644: return ArabicForms(0xFEDD, 0xFEDE, 0xFEDF, 0xFEE0, true);  // Lam (ل)
-        default:     return getArabicForms(c);
-    }
-}
-
-private bool isArabicChar(dchar c) pure nothrow @nogc {
-    return (c >= 0x0600 && c <= 0x06FF) || (c >= 0x0750 && c <= 0x077F) ||
-           (c >= 0xFB50 && c <= 0xFDFF) || (c >= 0xFE70 && c <= 0xFEFF);
-}
-
-private dchar mirrorBracket(dchar c) pure nothrow @nogc {
-    switch (c) {
-        case '(': return ')';
-        case ')': return '(';
-        case '[': return ']';
-        case ']': return '[';
-        case '{': return '}';
-        case '}': return '{';
-        default:  return c;
-    }
-}
-
-/// Shape Urdu/Arabic text into connected Presentation Forms and reorder RTL segments
-/// for DLangUI's left-to-right renderer. Returns pure ASCII strings unchanged.
-dstring shapeForDisplay(dstring input) {
-    bool hasRtl = false;
-    foreach (dchar c; input) {
-        if (isArabicChar(c)) {
-            hasRtl = true;
-            break;
-        }
-    }
-    if (!hasRtl)
-        return input;
-
-    // Step 1: Contextual Joining (Initial / Medial / Final / Isolated + Lam-Alef ligature)
-    dchar[] shaped;
-    shaped.reserve(input.length);
-
-    size_t n = input.length;
-    for (size_t i = 0; i < n; i++) {
-        dchar curr = input[i];
-        auto currF = lookupArabicLetter(curr);
-        if (currF.isolated == 0) {
-            shaped ~= curr;
-            continue;
-        }
-
-        bool prevJoins = false;
-        if (i > 0) {
-            auto prevF = lookupArabicLetter(input[i - 1]);
-            if (prevF.isolated != 0 && prevF.joinsLeft)
-                prevJoins = true;
-        }
-
-        // Check Lam + Alef ligature
-        if (curr == 0x0644 && i + 1 < n) {
-            dchar next = input[i + 1];
-            dchar ligIso = 0, ligFin = 0;
-            if (next == 0x0622)      { ligIso = 0xFEF5; ligFin = 0xFEF6; }
-            else if (next == 0x0623) { ligIso = 0xFEF7; ligFin = 0xFEF8; }
-            else if (next == 0x0625) { ligIso = 0xFEF9; ligFin = 0xFEFA; }
-            else if (next == 0x0627) { ligIso = 0xFEFB; ligFin = 0xFEFC; }
-            if (ligIso != 0) {
-                shaped ~= prevJoins ? ligFin : ligIso;
-                i++; // consumed Alef
-                continue;
-            }
-        }
-
-        bool nextJoins = false;
-        if (currF.joinsLeft && i + 1 < n) {
-            auto nextF = lookupArabicLetter(input[i + 1]);
-            if (nextF.isolated != 0)
-                nextJoins = true;
-        }
-
-        if (prevJoins && nextJoins)
-            shaped ~= currF.medial;
-        else if (prevJoins && !nextJoins)
-            shaped ~= currF.final_;
-        else if (!prevJoins && nextJoins)
-            shaped ~= currF.initial;
-        else
-            shaped ~= currF.isolated;
-    }
-
-    // Step 2: Visual BiDi reordering for RTL runs (preserving LTR runs like Latin/digits inside RTL)
-    // Identify contiguous blocks starting at the first Arabic char and ending at the last Arabic char
-    // or reverse each RTL phrase while keeping embedded LTR words/numbers in left-to-right order.
-    static bool isLtrChar(dchar c) pure nothrow @nogc {
-        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
-    }
-
-    // Split into runs: if the string is predominantly RTL or contains RTL phrases,
-    // reverse the RTL phrase tokens and reverse characters within RTL tokens.
-    dchar[] result;
-    result.reserve(shaped.length);
-
-    size_t idx = 0;
-    while (idx < shaped.length) {
-        if (!isArabicChar(shaped[idx])) {
-            // Check if this is a bracket immediately preceding an Arabic run
-            if ((shaped[idx] == '(' || shaped[idx] == '[') && idx + 1 < shaped.length && isArabicChar(shaped[idx + 1])) {
-                // Include in the RTL segment below
-            } else {
-                result ~= shaped[idx];
-                idx++;
-                continue;
-            }
-        }
-
-        // Collect an entire RTL phrase (Arabic letters, spaces, punctuation, brackets, and embedded numbers)
-        size_t start = idx;
-        size_t end = idx;
-        size_t i = idx;
-        while (i < shaped.length) {
-            dchar c = shaped[i];
-            if (isArabicChar(c) || c == ')' || c == ']') {
-                i++;
-                end = i;
-            } else if (c == ' ' || c == '(' || c == '[' || c == '-' || c == '/' || c == ':' || (c >= '0' && c <= '9')) {
-                i++;
-            } else {
-                break;
-            }
-        }
-        // Include trailing closing bracket if matched
-        while (end < i && (shaped[end] == ')' || shaped[end] == ']'))
-            end++;
-
-        dchar[] rtlSlice = shaped[start .. end];
-        // Reverse the RTL slice for visual left-to-right drawing, mirroring brackets,
-        // then un-reverse any contiguous ASCII digit runs inside it.
-        dchar[] visualRtl;
-        visualRtl.length = rtlSlice.length;
-        foreach (k, ch; rtlSlice) {
-            visualRtl[rtlSlice.length - 1 - k] = mirrorBracket(ch);
-        }
-        // Restore LTR order of multi-digit numbers inside the reversed RTL slice
-        size_t d = 0;
-        while (d < visualRtl.length) {
-            if (visualRtl[d] >= '0' && visualRtl[d] <= '9') {
-                size_t dEnd = d + 1;
-                while (dEnd < visualRtl.length && visualRtl[dEnd] >= '0' && visualRtl[dEnd] <= '9')
-                    dEnd++;
-                if (dEnd - d > 1) {
-                    visualRtl[d .. dEnd].reverse();
-                }
-                d = dEnd;
-            } else {
-                d++;
-            }
-        }
-
-        result ~= visualRtl;
-        idx = end;
-    }
-
-    return cast(dstring) result;
-}
 
 /// Clean, modern flat button that draws its own solid fill, border, hover state,
 /// and label without DLangUI's legacy 9-patch theme overrides.
@@ -407,22 +163,30 @@ class LinearGridWidget : StringGridWidget {
     }
 
     protected override void drawCellBackground(DrawBuf buf, Rect rc, int c, int r) {
+        dstring firstCell = (r >= 0 && cols > 0) ? cellText(0, r) : ""d;
+        bool isHeadingRow = firstCell.startsWith("▸"d);
         bool selectedRow = (r == row);
         uint bg = (r % 2 == 1) ? 0xFAFAFA : 0xFFFFFF;
-        if (selectedRow)
+        if (isHeadingRow)
+            bg = 0xEFF6FF;
+        else if (selectedRow)
             bg = 0xDBEAFE;
         buf.fillRect(rc, bg);
-        buf.drawLine(Point(rc.right - 1, rc.top), Point(rc.right - 1, rc.bottom), 0xF1F5F9);
-        buf.drawLine(Point(rc.left, rc.bottom - 1), Point(rc.right, rc.bottom - 1), 0xE4E4E7);
-        if (selectedRow && c == 0) {
+        if (!isHeadingRow)
+            buf.drawLine(Point(rc.right - 1, rc.top), Point(rc.right - 1, rc.bottom), 0xF1F5F9);
+        buf.drawLine(Point(rc.left, rc.bottom - 1), Point(rc.right, rc.bottom - 1), isHeadingRow ? 0xBFDBFE : 0xE4E4E7);
+        if ((selectedRow || isHeadingRow) && c == 0) {
             Rect accent = Rect(rc.left, rc.top, rc.left + 4, rc.bottom);
             buf.fillRect(accent, 0x2563EB);
         }
     }
 
     protected override void drawCell(DrawBuf buf, Rect rc, int col, int row) {
+        dstring firstCell = (row >= 0 && cols > 0) ? cellText(0, row) : ""d;
+        bool isHeadingRow = firstCell.startsWith("▸"d);
         dstring rawTxt = cellText(col, row);
         if (!rawTxt.length) {
+            if (isHeadingRow) return;
             rawTxt = "—"d;
         }
         dstring txt = shapeForDisplay(rawTxt);
@@ -431,7 +195,9 @@ class LinearGridWidget : StringGridWidget {
         Point sz = fnt.textSize(txt);
 
         uint fg = 0x18181B;
-        if (rawTxt == "—"d) {
+        if (isHeadingRow) {
+            fg = 0x1E40AF;
+        } else if (rawTxt == "—"d) {
             fg = 0xA1A1AA;
         } else if (rawTxt == "Overdue"d || rawTxt == "0 left"d || rawTxt == "Core"d || rawTxt == "Issued"d) {
             fg = 0xDC2626;
@@ -454,6 +220,7 @@ class LibraryAppView : HorizontalLayout {
     FlatButton navCirculationBtn;
     FlatButton navBooksBtn;
     FlatButton navMembersBtn;
+    FlatButton navReportsBtn;
     FlatButton navSchemaBtn;
     TextWidget statBooksText;
     TextWidget statMembersText;
@@ -465,6 +232,7 @@ class LibraryAppView : HorizontalLayout {
     Widget circulationView;
     Widget booksView;
     Widget membersView;
+    Widget reportsView;
     Widget schemaView;
 
     // --- 1. Circulation (Issue / Return) widgets ---
@@ -527,9 +295,34 @@ class LibraryAppView : HorizontalLayout {
     CheckBox schemaReqCheck;
     TextWidget schemaCoreBadge;
 
+    // --- 5. Reports workspace widgets ---
+    string reportGroupByKey;
+    string reportFilterValue;
+    string[] reportFilterValues;
+    string lastGeneratedPdfPath;
+    bool reportOutputPathEdited = false;
+    bool updatingReportOutputPath = false;
+    VerticalLayout reportGroupColsBox;
+    FlatButton[string] reportGroupColBtns;
+    ComboBox reportFilterCombo;
+    EditLine reportSearchInput;
+    CheckBox reportAvailOnlyCheck;
+    CheckBox reportPageBreakCheck;
+    VerticalLayout reportTableColsBox;
+    CheckBox[string] reportTableColChecks;
+    EditLine reportTitleInput;
+    EditLine reportOutputPathInput;
+    VerticalLayout reportResultCard;
+    TextWidget reportResultText;
+    FlatButton reportOpenPdfBtn;
+    TextWidget reportPreviewHeader;
+    TextWidget reportPreviewStats;
+    LinearGridWidget reportPreviewGrid;
+
     this(LibraryStore store) {
         super("ROOT");
         this.store = store;
+        this.reportGroupByKey = defaultSubjectColumnKey(store.schemaFor(EntityType.book));
         fontFace = "Segoe UI,Tahoma,Arial";
         layoutWidth = FILL_PARENT;
         layoutHeight = FILL_PARENT;
@@ -553,11 +346,13 @@ class LibraryAppView : HorizontalLayout {
         circulationView = buildCirculationView();
         booksView       = buildBooksView();
         membersView     = buildMembersView();
+        reportsView     = buildReportsView();
         schemaView      = buildSchemaView();
 
         workspaceStack.addChild(circulationView);
         workspaceStack.addChild(booksView);
         workspaceStack.addChild(membersView);
+        workspaceStack.addChild(reportsView);
         workspaceStack.addChild(schemaView);
 
         rightCol.addChild(workspaceStack);
@@ -625,11 +420,13 @@ class LibraryAppView : HorizontalLayout {
         navCirculationBtn = makeNavBtn("Issue & Return"d, "circulation");
         navBooksBtn       = makeNavBtn("Books"d, "books");
         navMembersBtn     = makeNavBtn("Members"d, "members");
+        navReportsBtn     = makeNavBtn("Reports"d, "reports");
         navSchemaBtn      = makeNavBtn("Schema"d, "schema");
 
         sb.addChild(navCirculationBtn);
         sb.addChild(navBooksBtn);
         sb.addChild(navMembersBtn);
+        sb.addChild(navReportsBtn);
         sb.addChild(navSchemaBtn);
 
         auto spacer = new Widget();
@@ -667,6 +464,7 @@ class LibraryAppView : HorizontalLayout {
         circulationView.visibility = (tabId == "circulation") ? Visibility.Visible : Visibility.Gone;
         booksView.visibility       = (tabId == "books")       ? Visibility.Visible : Visibility.Gone;
         membersView.visibility     = (tabId == "members")     ? Visibility.Visible : Visibility.Gone;
+        reportsView.visibility     = (tabId == "reports")     ? Visibility.Visible : Visibility.Gone;
         schemaView.visibility      = (tabId == "schema")      ? Visibility.Visible : Visibility.Gone;
 
         void styleNav(FlatButton b, bool active) {
@@ -679,6 +477,7 @@ class LibraryAppView : HorizontalLayout {
         styleNav(navCirculationBtn, tabId == "circulation");
         styleNav(navBooksBtn,       tabId == "books");
         styleNav(navMembersBtn,     tabId == "members");
+        styleNav(navReportsBtn,     tabId == "reports");
         styleNav(navSchemaBtn,      tabId == "schema");
 
         workspaceStack.requestLayout();
@@ -1642,6 +1441,517 @@ class LibraryAppView : HorizontalLayout {
     }
 
     // =========================================================================
+    // 5. Reports Workspace View (Dynamic Schema Grouping & PDF Export)
+    // =========================================================================
+    private Widget buildReportsView() {
+        auto root = new HorizontalLayout("REPORTS_VIEW");
+        root.layoutWidth = FILL_PARENT;
+        root.layoutHeight = FILL_PARENT;
+        root.backgroundColor = 0xFFFFFF;
+
+        // Left: Report Builder & Filter Panel (370px)
+        auto leftCol = new VerticalLayout();
+        leftCol.layoutWidth = 370;
+        leftCol.minWidth = 370;
+        leftCol.maxWidth = 370;
+        leftCol.layoutHeight = FILL_PARENT;
+        leftCol.backgroundColor = 0xFAFAFA;
+
+        auto leftTop = new HorizontalLayout();
+        leftTop.layoutWidth = FILL_PARENT;
+        leftTop.padding = Rect(18, 14, 18, 14);
+        leftTop.backgroundColor = 0xFFFFFF;
+        auto header = new TextWidget(null, "PDF Report Builder"d);
+        header.fontSize = pointsToPixels(13);
+        header.fontWeight = 700;
+        header.textColor = 0x18181B;
+        leftTop.addChild(header);
+        leftCol.addChild(leftTop);
+        leftCol.addChild(makeDivider(false, 0xE4E4E7));
+
+        auto leftScroll = new ScrollWidget();
+        leftScroll.layoutWidth = FILL_PARENT;
+        leftScroll.layoutHeight = FILL_PARENT;
+        leftScroll.backgroundColor = 0xFAFAFA;
+
+        auto panel = new VerticalLayout();
+        panel.layoutWidth = 345;
+        panel.layoutHeight = WRAP_CONTENT;
+        panel.padding = Rect(18, 14, 18, 20);
+        panel.backgroundColor = 0xFAFAFA;
+
+        // Section 1: Schema Column Selector (Heading / Segregation Column)
+        panel.addChild(makeFieldLabel("1. Segregate & Group Books By (Heading Column)"d));
+        auto hint = new TextWidget(null, "Click any schema column to use as section headings:"d);
+        hint.fontSize = pointsToPixels(8);
+        hint.textColor = 0x71717A;
+        hint.margins = Rect(0, 0, 0, 6);
+        panel.addChild(hint);
+
+        reportGroupColsBox = new VerticalLayout();
+        reportGroupColsBox.layoutWidth = FILL_PARENT;
+        reportGroupColsBox.layoutHeight = WRAP_CONTENT;
+        reportGroupColsBox.margins = Rect(0, 0, 0, 10);
+        panel.addChild(reportGroupColsBox);
+
+        // Section 2: Filter by Selected Heading Value
+        panel.addChild(makeFieldLabel("2. Filter Heading Value"d));
+        reportFilterCombo = new ComboBox(null, ["All groups"d]);
+        reportFilterCombo.layoutWidth = FILL_PARENT;
+        reportFilterCombo.margins = Rect(0, 2, 0, 10);
+        reportFilterCombo.itemClick = delegate(Widget source, int index) {
+            if (index <= 0 || index > cast(int) reportFilterValues.length)
+                reportFilterValue = "";
+            else
+                reportFilterValue = reportFilterValues[index - 1];
+            syncDefaultReportOutputPath();
+            refreshReportPreview();
+            return true;
+        };
+        panel.addChild(reportFilterCombo);
+
+        // Section 3: Additional Search & Layout Options
+        panel.addChild(makeFieldLabel("3. Search & Options"d));
+        reportSearchInput = makeEditLine(""d);
+        reportSearchInput.contentChange = delegate(EditableContent c) {
+            refreshReportPreview();
+        };
+        panel.addChild(reportSearchInput);
+
+        reportAvailOnlyCheck = new CheckBox(null, "Available copies only"d);
+        reportAvailOnlyCheck.margins = Rect(0, 2, 0, 4);
+        reportAvailOnlyCheck.checkChange = delegate(Widget src, bool checked) {
+            refreshReportFilterCombo();
+            refreshReportPreview();
+            return true;
+        };
+        panel.addChild(reportAvailOnlyCheck);
+
+        reportPageBreakCheck = new CheckBox(null, "Start each heading on a new page"d);
+        reportPageBreakCheck.margins = Rect(0, 0, 0, 10);
+        panel.addChild(reportPageBreakCheck);
+
+        // Section 4: Columns shown inside each heading's table
+        panel.addChild(makeFieldLabel("4. Columns in PDF Table"d));
+        reportTableColsBox = new VerticalLayout();
+        reportTableColsBox.layoutWidth = FILL_PARENT;
+        reportTableColsBox.layoutHeight = WRAP_CONTENT;
+        reportTableColsBox.margins = Rect(0, 2, 0, 10);
+        panel.addChild(reportTableColsBox);
+
+        // Section 5: Report Title & Output File Path
+        panel.addChild(makeFieldLabel("5. Report Title"d));
+        reportTitleInput = makeEditLine("College Library — Books Report"d);
+        panel.addChild(reportTitleInput);
+
+        panel.addChild(makeFieldLabel("Output PDF Path"d));
+        reportOutputPathInput = makeEditLine(toUTF32(defaultReportPdfPathFor(reportGroupByKey, reportFilterValue)));
+        reportOutputPathInput.contentChange = delegate(EditableContent c) {
+            if (!updatingReportOutputPath)
+                reportOutputPathEdited = true;
+        };
+        panel.addChild(reportOutputPathInput);
+
+        // Action buttons
+        auto genBtn = makePrimaryButton("Generate PDF Report"d);
+        genBtn.layoutWidth = FILL_PARENT;
+        genBtn.margins = Rect(0, 10, 0, 6);
+        genBtn.click = delegate(Widget w) {
+            handleGeneratePdfReport();
+            return true;
+        };
+        panel.addChild(genBtn);
+
+        reportOpenPdfBtn = makeFilterPill("Open Last Generated PDF"d, false);
+        reportOpenPdfBtn.layoutWidth = FILL_PARENT;
+        reportOpenPdfBtn.margins = Rect(0, 0, 0, 10);
+        reportOpenPdfBtn.visibility = Visibility.Gone;
+        reportOpenPdfBtn.click = delegate(Widget w) {
+            handleOpenLastPdf();
+            return true;
+        };
+        panel.addChild(reportOpenPdfBtn);
+
+        reportResultCard = new VerticalLayout();
+        reportResultCard.layoutWidth = FILL_PARENT;
+        reportResultCard.padding = Rect(10, 8, 10, 8);
+        reportResultCard.backgroundColor = 0xDCFCE7;
+        reportResultCard.visibility = Visibility.Gone;
+        reportResultText = new TextWidget(null, ""d);
+        reportResultText.fontSize = pointsToPixels(9);
+        reportResultText.fontWeight = 600;
+        reportResultText.textColor = 0x166534;
+        reportResultCard.addChild(reportResultText);
+        panel.addChild(reportResultCard);
+
+        leftScroll.contentWidget = panel;
+        leftCol.addChild(leftScroll);
+        root.addChild(leftCol);
+        root.addChild(makeDivider(true, 0xE4E4E7));
+
+        // Right: Live Segregated Preview Pane
+        auto rightPane = new VerticalLayout();
+        rightPane.layoutWidth = FILL_PARENT;
+        rightPane.layoutHeight = FILL_PARENT;
+        rightPane.backgroundColor = 0xFFFFFF;
+
+        auto topBar = new HorizontalLayout();
+        topBar.layoutWidth = FILL_PARENT;
+        topBar.layoutHeight = WRAP_CONTENT;
+        topBar.padding = Rect(16, 12, 16, 12);
+        topBar.alignment = Align.VCenter;
+        topBar.backgroundColor = 0xFFFFFF;
+
+        auto titleStack = new VerticalLayout();
+        titleStack.layoutWidth = FILL_PARENT;
+        reportPreviewHeader = new TextWidget(null, "Report Preview"d);
+        reportPreviewHeader.fontSize = pointsToPixels(13);
+        reportPreviewHeader.fontWeight = 700;
+        reportPreviewHeader.textColor = 0x18181B;
+        titleStack.addChild(reportPreviewHeader);
+
+        reportPreviewStats = new TextWidget(null, ""d);
+        reportPreviewStats.fontSize = pointsToPixels(9);
+        reportPreviewStats.textColor = 0x52525B;
+        titleStack.addChild(reportPreviewStats);
+        topBar.addChild(titleStack);
+
+        auto quickGenBtn = makeSuccessButton("Export PDF"d);
+        quickGenBtn.click = delegate(Widget w) {
+            handleGeneratePdfReport();
+            return true;
+        };
+        topBar.addChild(quickGenBtn);
+
+        rightPane.addChild(topBar);
+        rightPane.addChild(makeDivider(false, 0xE4E4E7));
+
+        reportPreviewGrid = new LinearGridWidget("REPORT_PREVIEW_GRID");
+        reportPreviewGrid.layoutWidth = FILL_PARENT;
+        reportPreviewGrid.layoutHeight = FILL_PARENT;
+        rightPane.addChild(reportPreviewGrid);
+
+        root.addChild(rightPane);
+        return root;
+    }
+
+    private void syncDefaultReportOutputPath() {
+        if (reportOutputPathEdited || !reportOutputPathInput)
+            return;
+        updatingReportOutputPath = true;
+        scope(exit) updatingReportOutputPath = false;
+        reportOutputPathInput.text = toUTF32(defaultReportPdfPathFor(reportGroupByKey, reportFilterValue));
+    }
+
+    private FlatButton makeReportGroupColButton(string colKey, string btnLabel, bool rightMargin) {
+        auto btn = new FlatButton(toUTF32(btnLabel));
+        btn.id = colKey;
+        btn.fontSize = pointsToPixels(9);
+        btn.padding = Rect(10, 6, 10, 6);
+        btn.layoutWidth = FILL_PARENT;
+        btn.margins = Rect(0, 0, rightMargin ? 5 : 0, 0);
+        btn.click = delegate(Widget w) {
+            selectReportGroupColumn(w.id);
+            return true;
+        };
+        return btn;
+    }
+
+    private void rebuildReportControls() {
+        auto schema = store.schemaFor(EntityType.book);
+        string defSubjectKey = defaultSubjectColumnKey(schema);
+
+        // Verify current reportGroupByKey still exists in schema; otherwise reset to default subject column
+        bool keyExists = false;
+        foreach (f; schema) {
+            if (f.key == reportGroupByKey) {
+                keyExists = true;
+                break;
+            }
+        }
+        if (!keyExists) {
+            reportGroupByKey = defSubjectKey;
+            reportFilterValue = "";
+        }
+
+        // Rebuild grouping column selector chips (2 per row for compact visual clarity)
+        reportGroupColsBox.removeAllChildren();
+        reportGroupColBtns.clear();
+
+        HorizontalLayout rowBox = null;
+        foreach (i, f; schema) {
+            if (i % 2 == 0) {
+                rowBox = new HorizontalLayout();
+                rowBox.layoutWidth = FILL_PARENT;
+                rowBox.layoutHeight = WRAP_CONTENT;
+                rowBox.margins = Rect(0, 0, 0, 4);
+                reportGroupColsBox.addChild(rowBox);
+            }
+            bool isDefaultSubject = (f.key == defSubjectKey);
+            string btnLabel = reportFieldDisplayLabel(f);
+            if (isDefaultSubject)
+                btnLabel = "★ " ~ btnLabel;
+
+            auto btn = makeReportGroupColButton(f.key, btnLabel, (i % 2 == 0));
+            reportGroupColBtns[f.key] = btn;
+            rowBox.addChild(btn);
+        }
+
+        // Rebuild PDF Table Column checkboxes (2 per row)
+        bool[string] prevChecked;
+        bool hadPrev = (reportTableColChecks.length > 0);
+        foreach (k, cb; reportTableColChecks) {
+            prevChecked[k] = cb.checked;
+        }
+        string[] defCols = defaultReportTableColumns(schema, reportGroupByKey);
+
+        reportTableColsBox.removeAllChildren();
+        reportTableColChecks.clear();
+
+        HorizontalLayout cbRow = null;
+        foreach (i, f; schema) {
+            if (i % 2 == 0) {
+                cbRow = new HorizontalLayout();
+                cbRow.layoutWidth = FILL_PARENT;
+                cbRow.layoutHeight = WRAP_CONTENT;
+                reportTableColsBox.addChild(cbRow);
+            }
+            auto cb = new CheckBox(null, toUTF32(f.label));
+            cb.layoutWidth = FILL_PARENT;
+            cb.margins = Rect(0, 1, 4, 1);
+            if (hadPrev && (f.key in prevChecked)) {
+                cb.checked = prevChecked[f.key];
+            } else {
+                cb.checked = defCols.canFind(f.key);
+            }
+            cb.checkChange = delegate(Widget src, bool checked) {
+                refreshReportPreview();
+                return true;
+            };
+            reportTableColChecks[f.key] = cb;
+            cbRow.addChild(cb);
+        }
+
+        styleReportGroupButtons();
+    }
+
+    private void styleReportGroupButtons() {
+        foreach (k, btn; reportGroupColBtns) {
+            bool active = (k == reportGroupByKey);
+            if (active) {
+                btn.setColors(0x2563EB, 0xFFFFFF, 0x1D4ED8, 0x1D4ED8);
+            } else {
+                btn.setColors(0xFFFFFF, 0x3F3F46, 0xEFF6FF, 0xD4D4D8);
+            }
+        }
+    }
+
+    private void selectReportGroupColumn(string colKey) {
+        if (reportGroupByKey == colKey) return;
+        string prevKey = reportGroupByKey;
+        reportGroupByKey = colKey;
+        reportFilterValue = "";
+
+        // Smart toggle: uncheck newly grouped column and re-check previous if it was a standard column
+        if (auto pNew = colKey in reportTableColChecks)
+            (*pNew).checked = false;
+        if (auto pOld = prevKey in reportTableColChecks) {
+            if (prevKey == "category" || prevKey == "author" || prevKey == "title" ||
+                prevKey == "copies" || prevKey == "status" || prevKey == "edition" || prevKey == "accessionNo") {
+                (*pOld).checked = true;
+            }
+        }
+
+        syncDefaultReportOutputPath();
+
+        styleReportGroupButtons();
+        refreshReportFilterCombo();
+        refreshReportPreview();
+    }
+
+    private void refreshReportFilterCombo() {
+        if (!reportFilterCombo) return;
+        ReportOptions baseOpts;
+        baseOpts.groupByKey = reportGroupByKey;
+        baseOpts.availableOnly = reportAvailOnlyCheck && reportAvailOnlyCheck.checked;
+        auto allGroups = buildReportGroups(store, baseOpts);
+
+        reportFilterValues = [];
+        dstring[] items = [toUTF32("All (" ~ to!string(allGroups.length) ~ " groups)")];
+        int selectedIdx = 0;
+
+        foreach (i, ref g; allGroups) {
+            reportFilterValues ~= g.heading;
+            items ~= shapeForDisplay(toUTF32(g.heading ~ " (" ~ to!string(g.books.length) ~ " books)"));
+            if (reportFilterValue.length > 0 && g.heading.toLower() == reportFilterValue.toLower()) {
+                selectedIdx = cast(int)(i + 1);
+            }
+        }
+        if (selectedIdx == 0) {
+            reportFilterValue = "";
+            syncDefaultReportOutputPath();
+        }
+
+        reportFilterCombo.items = items;
+        reportFilterCombo.selectedItemIndex = selectedIdx;
+    }
+
+    private ReportOptions collectReportOptions() {
+        ReportOptions opts;
+        opts.groupByKey = reportGroupByKey;
+        opts.filterGroupValue = reportFilterValue;
+        opts.searchQuery = reportSearchInput ? toUTF8(reportSearchInput.text).strip() : "";
+        opts.availableOnly = reportAvailOnlyCheck && reportAvailOnlyCheck.checked;
+        opts.pageBreakPerGroup = reportPageBreakCheck && reportPageBreakCheck.checked;
+        opts.reportTitle = reportTitleInput ? toUTF8(reportTitleInput.text).strip() : "College Library — Books Report";
+
+        foreach (f; store.schemaFor(EntityType.book)) {
+            if (auto p = f.key in reportTableColChecks) {
+                if ((*p).checked)
+                    opts.tableColumnKeys ~= f.key;
+            }
+        }
+        if (opts.tableColumnKeys.length == 0) {
+            opts.tableColumnKeys = defaultReportTableColumns(store.schemaFor(EntityType.book), reportGroupByKey);
+        }
+        return opts;
+    }
+
+    private void refreshReportPreview() {
+        if (!reportPreviewGrid) return;
+        auto schema = store.schemaFor(EntityType.book);
+        auto opts = collectReportOptions();
+        auto groups = buildReportGroups(store, opts);
+
+        string groupLabel = opts.groupByKey;
+        foreach (f; schema) {
+            if (f.key == opts.groupByKey) {
+                groupLabel = reportFieldDisplayLabel(f);
+                break;
+            }
+        }
+
+        int totalBooks = 0;
+        int totalCopies = 0;
+        foreach (ref g; groups) {
+            totalBooks += cast(int) g.books.length;
+            totalCopies += g.totalCopies;
+        }
+
+        reportPreviewHeader.text = toUTF32("Report Preview — Grouped by " ~ groupLabel);
+        string statsStr = to!string(groups.length) ~ (groups.length == 1 ? " group · " : " groups · ") ~
+            to!string(totalBooks) ~ " books · " ~ to!string(totalCopies) ~ " copies";
+        if (opts.filterGroupValue.length > 0)
+            statsStr ~= " · Filtered: " ~ opts.filterGroupValue;
+        reportPreviewStats.text = toUTF32(statsStr);
+
+        FieldDef[] cols;
+        foreach (ck; opts.tableColumnKeys) {
+            foreach (f; schema) {
+                if (f.key == ck) {
+                    cols ~= f;
+                    break;
+                }
+            }
+        }
+
+        string[] headers = ["# / Heading"];
+        int[] widths = [180];
+        foreach (f; cols) {
+            headers ~= f.label;
+            widths ~= f.width;
+        }
+
+        dstring[][] rows;
+        foreach (ref g; groups) {
+            // Highlighted section heading row
+            dstring[] hRow;
+            hRow.length = headers.length;
+            hRow[0] = toUTF32("▸ " ~ g.heading);
+            if (headers.length > 1) {
+                hRow[1] = toUTF32(to!string(g.books.length) ~ " books · " ~ to!string(g.totalCopies) ~ " copies");
+            }
+            for (size_t c = 2; c < headers.length; c++)
+                hRow[c] = ""d;
+            rows ~= hRow;
+
+            // Book rows belonging to this heading
+            foreach (bi, ref b; g.books) {
+                dstring[] bRow;
+                bRow.length = headers.length;
+                bRow[0] = toUTF32(to!string(bi + 1));
+                foreach (ci, f; cols) {
+                    bRow[ci + 1] = toUTF32(b.get(f.key));
+                }
+                rows ~= bRow;
+            }
+        }
+
+        populateGrid(reportPreviewGrid, headers, widths, rows);
+    }
+
+    private void handleGeneratePdfReport() {
+        auto opts = collectReportOptions();
+        string outPath = reportOutputPathInput ? toUTF8(reportOutputPathInput.text).strip() : "";
+        if (outPath.length == 0) {
+            outPath = defaultReportPdfPathFor(opts.groupByKey, opts.filterGroupValue);
+            if (reportOutputPathInput) {
+                updatingReportOutputPath = true;
+                reportOutputPathInput.text = toUTF32(outPath);
+                updatingReportOutputPath = false;
+                reportOutputPathEdited = false;
+            }
+        }
+        if (!outPath.toLower().endsWith(".pdf")) {
+            outPath ~= ".pdf";
+            if (reportOutputPathInput)
+                reportOutputPathInput.text = toUTF32(outPath);
+        }
+
+        auto res = generateBooksPdfReport(store, opts, outPath);
+        if (!res.ok) {
+            reportResultCard.backgroundColor = 0xFEE2E2;
+            reportResultText.textColor = 0xDC2626;
+            reportResultText.text = toUTF32(res.error);
+            reportResultCard.visibility = Visibility.Visible;
+            setStatus(res.error, true);
+            requestLayout();
+            return;
+        }
+
+        lastGeneratedPdfPath = res.outputPath;
+        string summary = "Saved: " ~ res.outputPath ~ " (" ~
+            to!string(res.pageCount) ~ " pages, " ~
+            to!string(res.groupCount) ~ " groups, " ~
+            to!string(res.bookCount) ~ " books)";
+        reportResultCard.backgroundColor = 0xDCFCE7;
+        reportResultText.textColor = 0x166534;
+        reportResultText.text = toUTF32(summary);
+        reportResultCard.visibility = Visibility.Visible;
+        reportOpenPdfBtn.visibility = Visibility.Visible;
+        setStatus(summary);
+        requestLayout();
+    }
+
+    private void handleOpenLastPdf() {
+        if (lastGeneratedPdfPath.length == 0 || !exists(lastGeneratedPdfPath)) {
+            setStatus("Generated PDF file not found on disk.", true);
+            return;
+        }
+        try {
+            string absPath = absolutePath(lastGeneratedPdfPath);
+            version (Windows) {
+                spawnProcess(["cmd.exe", "/c", "start", "", absPath]);
+            } else {
+                spawnProcess(["xdg-open", absPath]);
+            }
+            setStatus("Opened " ~ lastGeneratedPdfPath);
+        } catch (Exception e) {
+            setStatus("Could not launch PDF viewer: " ~ e.msg, true);
+        }
+    }
+
+    // =========================================================================
     // Dynamic Form Rebuilders (Driven by Live Schemas)
     // =========================================================================
     void rebuildDynamicForms() {
@@ -1722,6 +2032,9 @@ class LibraryAppView : HorizontalLayout {
             issueExtraEditors[f.key] = ed;
             issueExtraBox.addChild(ed);
         }
+
+        // 5. Rebuild Dynamic Report Grouping & Table Column Controls
+        rebuildReportControls();
     }
 
     // =========================================================================
@@ -1734,6 +2047,8 @@ class LibraryAppView : HorizontalLayout {
         refreshBooksGrid();
         refreshMembersGrid();
         refreshSchemaGrid();
+        refreshReportFilterCombo();
+        refreshReportPreview();
     }
 
     private void refreshSidebarStats() {

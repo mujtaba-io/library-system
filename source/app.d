@@ -2,7 +2,9 @@ module app;
 
 import dlangui;
 import std.algorithm : canFind;
-import std.file : exists, remove;
+import std.file : exists, read, remove;
+import std.string : indexOf;
+import report;
 import store;
 import ui;
 
@@ -112,6 +114,44 @@ private int runSelfTest() {
     auto s2 = new LibraryStore(testFile);
     assert(s2.findMemberByCnic("3520288889991").get("blood_group") == "O+");
     assert(s2.findBook(savedBookId).get("call_no") == "CS-9901");
+
+    // 7. Verify PDF report generation by default Subject/Category on full library_data.json
+    string pdfBySubject = "report_test_subject_temp.pdf";
+    string pdfByCustom = "report_test_custom_temp.pdf";
+    scope(exit) {
+        if (exists(pdfBySubject)) remove(pdfBySubject);
+        if (exists(pdfByCustom)) remove(pdfByCustom);
+    }
+
+    ReportOptions subOpts;
+    subOpts.groupByKey = defaultSubjectColumnKey(legacyStore.schemaFor(EntityType.book));
+    assert(subOpts.groupByKey == "category", "Default subject column should resolve to category");
+    auto subRes = generateBooksPdfReport(legacyStore, subOpts, pdfBySubject);
+    assert(subRes.ok, "PDF generation by subject should succeed: " ~ subRes.error);
+    assert(subRes.bookCount == cast(int) legacyStore.books.length, "All books should be included");
+    assert(subRes.groupCount >= 12, "All 12 subjects should be grouped");
+    assert(subRes.pageCount > 1, "Full catalog report should span multiple pages");
+    auto pdfBytes = cast(string) read(pdfBySubject);
+    assert(pdfBytes.indexOf("%PDF-1.4") == 0, "Output should start with PDF-1.4 header");
+    assert(pdfBytes.indexOf("%%EOF") > 0, "Output should contain PDF EOF marker");
+    assert(pdfBytes.indexOf("/Type /Catalog") > 0 && pdfBytes.indexOf("/Type /Pages") > 0);
+
+    // 8. Verify PDF report grouping by a dynamic custom schema column + single-heading filter
+    ReportOptions customOpts;
+    customOpts.groupByKey = "call_no";
+    customOpts.filterGroupValue = "CS-9901";
+    auto customRes = generateBooksPdfReport(s2, customOpts, pdfByCustom);
+    assert(customRes.ok, "PDF generation by custom schema column should succeed: " ~ customRes.error);
+    assert(customRes.groupCount == 1 && customRes.bookCount == 1);
+
+    // 9. Verify default report filenames include both segregation column and filter value ('all' when unfiltered)
+    string today = todayIso();
+    assert(defaultReportPdfPathFor("category", "") == "reports/books_by_subject_all_" ~ today ~ ".pdf");
+    assert(defaultReportPdfPathFor("category", "Botany") == "reports/books_by_subject_botany_" ~ today ~ ".pdf");
+    assert(defaultReportPdfPathFor("category", "Computer Science") == "reports/books_by_subject_computer_science_" ~ today ~ ".pdf");
+    assert(defaultReportPdfPathFor("author", "") == "reports/books_by_author_all_" ~ today ~ ".pdf");
+    assert(defaultReportPdfPathFor("author", "G.L Chopra") == "reports/books_by_author_g_l_chopra_" ~ today ~ ".pdf");
+    assert(defaultReportPdfPathFor("call_no", "CS-9901") == "reports/books_by_call_no_cs_9901_" ~ today ~ ".pdf");
 
     return 0;
 }
